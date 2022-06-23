@@ -2,8 +2,7 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Below you'll find the framework-supported released versions. Please ensure you're using the latest framework when running and hosting it on your video gaming communities.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -12,8 +11,4 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+If you've located a glitch or exploit in the latest framework build, you can join our discord server and report the bug directly or file it as an "issue" under the Github issues page. Our Discord server is located at https://gameservershub.com/forums/pages/discord/
