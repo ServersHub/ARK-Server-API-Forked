@@ -26,3 +26,5 @@
 #include "../../ICommands.h"
 #include "IHooks.h"
 #include "Tools.h"
+
+static unsigned int GetBuildUniqueId() { return NativeCall<unsigned int>(nullptr, "Global.GetBuildUniqueId"); }

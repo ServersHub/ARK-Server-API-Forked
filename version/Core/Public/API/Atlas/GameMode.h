@@ -5,6 +5,24 @@
 
 struct FSocket;
 
+struct PeerServerConnectionData
+{
+	TArray<unsigned char> BytesToSend;
+	FString OtherServerIP;
+	int OtherServerPort;
+	int OtherServerId;
+	FSocket* Socket;
+	bool bInitialConnectionAttemptFinished;
+	bool ExternallyOwned;
+	long double LastSentAt;
+	int RemainingSendRetries;
+	TArray<unsigned char> BytesReceived;
+	bool Finished;
+	bool Success;
+	UWorld* World;
+};
+
+
 struct FIslandInfoGameplayValues
 {
 	int IslandId;
@@ -191,6 +209,91 @@ struct UGameInstance
 	TArray<UObject*> ObjectsPendingTimeShiftField() { return *GetNativePointerField<TArray<UObject*>*>(this, "UGameInstance.ObjectsPendingTimeShift"); }
 };
 
+/* SNAFU: framework does not handle nested struct functions in a namespace
+namespace cpp_redis {
+	struct client {
+		__int64 publish(std::string& channel, std::string& message) { return NativeCall<__int64, std::string&, std::string&>(this, "cpp_redis::client.publish", channel, message); }
+		cpp_redis::client* commit() { return NativeCall<cpp_redis::client*>(this, "cpp_redis::client.commit"); }
+		//unsigned int GetServerToSide(unsigned int InServerId, ESeamlessVolumeSide::Side InDesiredSide) { return NativeCall<unsigned int, unsigned int, ESeamlessVolumeSide::Side>(this, "FSeamlessGridInfo.GetServerToSide", InServerId, InDesiredSide); }
+		//__int64 __fastcall cpp_redis::client::publish(__int64 a1, __int64 a2)
+	};
+};
+
+
+struct __cppobj FDelegateHandle
+{
+	unsigned __int64 ID;
+};
+
+struct IDelegateInstance_vtbl
+{
+	FName* (__fastcall* GetFunctionName)(IDelegateInstance* this, FName* result);
+	const void* (__fastcall* GetRawMethodPtr)(IDelegateInstance* this);
+	const void* (__fastcall* GetRawUserObject)(IDelegateInstance* this);
+	EDelegateInstanceType::Type(__fastcall* GetType)(IDelegateInstance* this);
+	bool(__fastcall* HasSameObject)(IDelegateInstance* this, const void*);
+	bool(__fastcall* IsCompactable)(IDelegateInstance* this);
+	bool(__fastcall* IsSafeToExecute)(IDelegateInstance* this);
+	FDelegateHandle* (__fastcall* GetHandle)(IDelegateInstance* this, FDelegateHandle* result);
+	void(__fastcall * ~IDelegateInstance)(IDelegateInstance* this);
+};
+
+struct  IDelegateInstance
+{
+	IDelegateInstance_vtbl* __vftable ;
+};
+
+struct FDelegateBase<FWeakObjectPtr>
+{
+	IDelegateInstance* DelegateInstance;
+};
+
+struct TBaseDelegate_NoParams<void> : FDelegateBase<FWeakObjectPtr>
+{
+};
+
+struct FTimerUnifiedDelegate
+{
+	TBaseDelegate_NoParams<void> FuncDelegate;
+	FTimerDynamicDelegate FuncDynDelegate;
+	__int64 QuickCacheObjectPointer;
+};*/
+
+struct FRedisDatabaseConnectionInfo
+{
+	std::string URL;
+	unsigned __int64 Port;
+	std::string Password;
+	unsigned int TimeoutMsecs;
+	int MaxReconnects;
+	unsigned int RetryIntervalMsecs;
+};
+
+struct FDatabaseRedisShared {
+	static TMap<FString, FRedisDatabaseConnectionInfo> ConnectionLookups() { return *GetNativeDataPointerField<TMap<FString, FRedisDatabaseConnectionInfo>*>("Global.FDatabaseRedisShared::ConnectionLookups"); }
+};
+struct UDatabaseShared : UObject {
+	bool& bInitializedField() { return *GetNativePointerField<bool*>(this, "UDatabaseShared.bInitialized"); }
+};
+struct UDatabase_ClusterInfo : UDatabaseShared {};
+struct UDatabase_ClusterInfo_Redis : UDatabase_ClusterInfo, FDatabaseRedisShared {
+	unsigned int& MyLocalServerIdField() { return *GetNativePointerField<unsigned int*>(this, "UDatabase_ClusterInfo_Redis.MyLocalServerId"); }
+};
+
+struct UPubSub_GeneralNotifications : UDatabaseShared
+{
+	unsigned int& OurServerIdField() { return *GetNativePointerField<unsigned int*>(this, "UPubSub_GeneralNotifications.OurServerId"); }
+	bool Subscribe(FString* PlayerId) { return NativeCall<bool, FString*>(this, "UPubSub_GeneralNotifications.Subscribe", PlayerId); }
+	FString* GetPubSubChannel(FString* result) { return NativeCall<FString*, FString*>(this, "UPubSub_GeneralNotifications.GetPubSubChannel", result); }
+	static UClass* GetPrivateStaticClass(const wchar_t* Package) { return NativeCall<UClass*, const wchar_t*>(nullptr, "UPubSub_GeneralNotifications.GetPrivateStaticClass", Package); }
+};
+
+struct UPubSub_GeneralNotifications_Redis : UPubSub_GeneralNotifications, FDatabaseRedisShared {
+	char Publish(FString* Id, const FString* Msg) { return NativeCall<char, FString*, const FString*>(this, "UPubSub_GeneralNotifications_Redis.Publish", Id, Msg); }
+	char Subscribe(FString* Id, std::function<void __cdecl(unsigned int, FString&)>* callback) { return NativeCall<char, FString*, std::function<void __cdecl(unsigned int, FString&)>*>(this, "UPubSub_GeneralNotifications_Redis.Subscribe", Id, callback); }
+	static UClass* GetPrivateStaticClass(const wchar_t* Package) { return NativeCall<UClass*, const wchar_t*>(nullptr, "UPubSub_GeneralNotifications_Redis.GetPrivateStaticClass", Package); }
+};
+
 struct UShooterGameInstance : UGameInstance
 {
 	FName& CurrentStateField() { return *GetNativePointerField<FName*>(this, "UShooterGameInstance.CurrentState"); }
@@ -207,7 +310,7 @@ struct UShooterGameInstance : UGameInstance
 	FSeamlessGridInfo* GridInfoField() { return *GetNativePointerField<FSeamlessGridInfo * *>(this, "UShooterGameInstance.GridInfo"); }
 	bool& ShouldInitSpectatorPosField() { return *GetNativePointerField<bool*>(this, "UShooterGameInstance.ShouldInitSpectatorPos"); }
 	FVector& SpectatorInitialPosField() { return *GetNativePointerField<FVector*>(this, "UShooterGameInstance.SpectatorInitialPos"); }
-	//UDatabase_ClusterInfo * Database_ClusterInfo_RefField() { return *GetNativePointerField<UDatabase_ClusterInfo **>(this, "UShooterGameInstance.Database_ClusterInfo_Ref"); }
+	UDatabase_ClusterInfo* Database_ClusterInfo_RefField() { return *GetNativePointerField<UDatabase_ClusterInfo**>(this, "UShooterGameInstance.Database_ClusterInfo_Ref"); }
 	TArray<TWeakObjectPtr<AActor>>& SeamlessTravelActorsField() { return *GetNativePointerField<TArray<TWeakObjectPtr<AActor>>*>(this, "UShooterGameInstance.SeamlessTravelActors"); }
 	TWeakObjectPtr<ACharacter>& LastControlledCharacterField() { return *GetNativePointerField<TWeakObjectPtr<ACharacter>*>(this, "UShooterGameInstance.LastControlledCharacter"); }
 	long double& LastSeamlesslyTravelledAtField() { return *GetNativePointerField<long double*>(this, "UShooterGameInstance.LastSeamlesslyTravelledAt"); }
@@ -968,9 +1071,38 @@ struct AGameMode : AInfo
 	bool ShouldSpawnAtStartSpot(AController* Player) { return NativeCall<bool, AController*>(this, "AGameMode.ShouldSpawnAtStartSpot", Player); }
 };
 
+
+struct FPendingTreasureMapSpawnInfo {
+	int RequestId;
+	UPrimalItem* TreasureMapItem; 
+	float Quality; 
+	//TWeakObjectPtr<AShooterCharacter> MapGiveToCharacter;
+	FWeakObjectPtr MapGiveToCharacter; // offset 20 size 12
+};
+
+struct ATreasureMapManager : ANPCZoneManager {
+	TArray<FPendingTreasureMapSpawnInfo>& PendingSpawnTreasureMapsField() { return *GetNativePointerField<TArray<FPendingTreasureMapSpawnInfo>*>(this, "ATreasureMapManager.PendingSpawnTreasureMaps"); }
+	int& RequestCounterField() { return *GetNativePointerField<int*>(this, "ATreasureMapManager.RequestCounter"); }
+	char GenerateTreasureLocationOnIsland(unsigned int IslandId, float InQuality, FVector* OutLocation, bool* OutIsInCave, float* OutModifiedQuality, FSeamlessIslandInfo* ForIslandInfo) {
+		return NativeCall<char, unsigned int, float, FVector*, bool*, float*, FSeamlessIslandInfo* >(this, "ATreasureMapManager.GenerateTreasureLocationOnIsland", IslandId, InQuality, OutLocation, OutIsInCave, OutModifiedQuality, ForIslandInfo);
+	}
+
+	char OnTreasureChestLocationFound(int RequestId, FVector* Location, bool bInCave, float InQuality) {
+		return NativeCall<char, int, FVector*, bool, float >(this, "ATreasureMapManager.OnTreasureChestLocationFound", RequestId, Location, bInCave, InQuality);
+	}
+};
+
+struct ASeamlessVolumeManager : AActor {
+	bool OnReceivedFromPeerServer(FSocket* Socket, const TArray<unsigned char, FDefaultAllocator>* PacketData, unsigned int* SizeInBytes, unsigned int* OriginatingServerId, unsigned __int64* OriginatingSteamServerId, unsigned __int8* MessageType, TArray<unsigned char, FDefaultAllocator>* BodyBytes) {
+		return NativeCall<bool, FSocket*, const TArray<unsigned char>*, unsigned int*, unsigned int*, unsigned __int64*, unsigned __int8*,
+			TArray<unsigned char>* >(this, "ASeamlessVolumeManager.OnReceivedFromPeerServer", Socket, PacketData, SizeInBytes, OriginatingServerId, OriginatingSteamServerId, MessageType, BodyBytes);
+	}
+};
+
 struct AShooterGameMode : AGameMode
 {
 	struct SeamlessTravelLogEntry;
+	TMap<int, FSeamlessIslandInfo*>& AtlasIslandInfoField() { return *GetNativePointerField<TMap<int, FSeamlessIslandInfo*>*>(this, "AShooterGameMode.AtlasIslandInfo"); }
 	int& LastRepopulationIndexToCheckField() { return *GetNativePointerField<int*>(this, "AShooterGameMode.LastRepopulationIndexToCheck"); }
 	FString& AlarmNotificationKeyField() { return *GetNativePointerField<FString*>(this, "AShooterGameMode.AlarmNotificationKey"); }
 	FString& AlarmNotificationURLField() { return *GetNativePointerField<FString*>(this, "AShooterGameMode.AlarmNotificationURL"); }
@@ -1657,7 +1789,7 @@ struct AShooterGameMode : AGameMode
 	static AShooterGameMode SharedLogCreateSnapshot() { return NativeCall<AShooterGameMode>(nullptr, "AShooterGameMode.SharedLogCreateSnapshot"); }
 	//void SharedLogFetchPending(TFunction<void __cdecl(void)> TFunction<void __cdecl) { NativeCall<void, TFunction<void __cdecl(void)>>(this, "AShooterGameMode.SharedLogFetchPending", TFunction<void __cdecl); }
 	void SharedLogRollback(unsigned __int64 RollbackTarget) { NativeCall<void, unsigned __int64>(this, "AShooterGameMode.SharedLogRollback", RollbackTarget); }
-	void SharedLogTravelNotification(unsigned __int64 LogLine, TSharedPtr<TArray<unsigned char>, 0> TravelData) { NativeCall<void, unsigned __int64, TSharedPtr<TArray<unsigned char>, 0>>(this, "AShooterGameMode.SharedLogTravelNotification", LogLine, TravelData); }
+	void SharedLogTravelNotification(unsigned __int64 LogLine, TSharedPtr<TArray<unsigned char>>* TravelData) { NativeCall<void, unsigned __int64, TSharedPtr<TArray<unsigned char>>* >(this, "AShooterGameMode.SharedLogTravelNotification", LogLine, TravelData); }
 	void ShowMessageOfTheDay() { NativeCall<void>(this, "AShooterGameMode.ShowMessageOfTheDay"); }
 	void SingleplayerSetupValues() { NativeCall<void>(this, "AShooterGameMode.SingleplayerSetupValues"); }
 	APawn* SpawnDefaultPawnFor(AController* NewPlayer, AActor* StartSpot) { return NativeCall<APawn*, AController*, AActor*>(this, "AShooterGameMode.SpawnDefaultPawnFor", NewPlayer, StartSpot); }

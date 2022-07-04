@@ -150,6 +150,7 @@ struct FWeakObjectPtr
 	int ObjectSerialNumber;
 
 	void operator=(UObject const* __that) { return NativeCall<void, UObject const*>(this, "FWeakObjectPtr.operator=", __that); }
+	bool IsValid() { return NativeCall<bool>(this, "FWeakObjectPtr.IsValid"); }
 };
 
 template <typename T>
@@ -303,6 +304,7 @@ struct UObjectBaseUtility : public UObjectBase
 
 struct UObject : UObjectBaseUtility
 {
+	static UClass* GetPrivateStaticClass() { return NativeCall<UClass*>(nullptr, "UObject.GetPrivateStaticClass"); }
 	static UClass* StaticClass() { return NativeCall<UClass*>(nullptr, "UObject.StaticClass"); }
 	void ExecuteUbergraph(int EntryPoint) { NativeCall<void, int>(this, "UObject.ExecuteUbergraph", EntryPoint); }
 	bool AreAllOuterObjectsValid() { return NativeCall<bool>(this, "UObject.AreAllOuterObjectsValid"); }
@@ -373,10 +375,6 @@ struct UStruct : UField
 	void FinishDestroy() { NativeCall<void>(this, "UStruct.FinishDestroy"); }
 	void SetSuperStruct(UStruct* NewSuperStruct) { NativeCall<void, UStruct*>(this, "UStruct.SetSuperStruct", NewSuperStruct); }
 	void TagSubobjects(EObjectFlags NewFlags) { NativeCall<void, EObjectFlags>(this, "UStruct.TagSubobjects", NewFlags); }
-};
-
-struct UScriptStruct : UStruct
-{
 };
 
 struct UFunction : UStruct
@@ -517,6 +515,28 @@ struct UProperty : UField
 		*((T*)(object + this->Offset_InternalField())) = value;
 	}
 };
+
+struct  UScriptStruct : UStruct {};
+
+struct UObjectPropertyBase : UProperty
+{
+	UClass* PropertyClassField() { return *GetNativePointerField<UClass**>(this, "UObjectPropertyBase.PropertyClass"); }
+};
+
+struct  UStructProperty : UProperty
+{
+	UScriptStruct* StructField() { return *GetNativePointerField<UScriptStruct* *>(this, "UStructProperty.Struct"); }
+};
+
+template<typename InTCppType> struct TPropertyTypeFundamentals {};
+template<typename InTCppType, class TInPropertyBaseClass> 
+struct TProperty : public TInPropertyBaseClass, public TPropertyTypeFundamentals<InTCppType> {};
+template<typename InTCppType> struct TUObjectPropertyBase : public TProperty<InTCppType, UObjectPropertyBase> {};
+
+struct UObjectProperty : TUObjectPropertyBase<UObject*> { 
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UObjectProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+struct UClassProperty : UObjectProperty {};
 
 struct UNumericProperty : UProperty
 {

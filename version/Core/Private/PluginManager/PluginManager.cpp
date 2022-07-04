@@ -339,6 +339,7 @@ namespace API
 
 			if (fs::exists(new_plugin_file_path) && FindPlugin(filename) != loaded_plugins_.end())
 			{
+#ifndef ATLAS_GAME // not on ATLAS
 				// Save the world in case the unload/load procedure causes crash
 				if (save_world)
 				{
@@ -348,7 +349,7 @@ namespace API
 
 					save_world = false; // do not save again if multiple plugins are reloaded in this loop
 				}
-
+#endif
 				try
 				{
 					UnloadPlugin(filename);
