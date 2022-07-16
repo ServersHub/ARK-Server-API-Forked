@@ -309,6 +309,10 @@ struct AShooterGameState : AGameState
 	bool AllowDownloadDino(TSubclassOf<APrimalDinoCharacter> TheDinoClass) { return NativeCall<bool, TSubclassOf<APrimalDinoCharacter>>(this, "AShooterGameState.AllowDownloadDino", TheDinoClass); }
 	void NetUpdateOfflinePvPExpiringTeams(TArray<int> * NewPreventOfflinePvPExpiringTeams, TArray<double> * NewPreventOfflinePvPExpiringTimes) { NativeCall<void, TArray<int>*, TArray<double>*>(this, "AShooterGameState.NetUpdateOfflinePvPExpiringTeams", NewPreventOfflinePvPExpiringTeams, NewPreventOfflinePvPExpiringTimes); }
 	void NetUpdateOfflinePvPLiveTeams(TArray<int> * NewPreventOfflinePvPLiveTeams) { NativeCall<void, TArray<int>*>(this, "AShooterGameState.NetUpdateOfflinePvPLiveTeams", NewPreventOfflinePvPLiveTeams); }
+	void ApplyLiveTuningOverloads(TSharedPtr<FJsonObject, 0> Overloads) { NativeCall<void, TSharedPtr<FJsonObject, 0>>(this, "AShooterGameState.ApplyLiveTuningOverloads", Overloads); }
+	static FString* GetLiveTuningOverloadsDirectory(FString* result, bool bEnsureDirectoryExists) { return NativeCall<FString*, FString*, bool>(nullptr, "AShooterGameState.GetLiveTuningOverloadsDirectory", result, bEnsureDirectoryExists); }
+	static bool IsSupportedLiveTuningProperty(UProperty* Property, bool bIgnoreLiveTuningFlag) { return NativeCall<bool, UProperty*, bool>(nullptr, "AShooterGameState.IsSupportedLiveTuningProperty", Property, bIgnoreLiveTuningFlag); }
+	void ResetLiveTuningOverloads() { NativeCall<void>(this, "AShooterGameState.ResetLiveTuningOverloads"); }
 };
 
 struct AGameSession 
@@ -325,7 +329,7 @@ struct AGameSession
 	void InitOptions(FString* Options) { NativeCall<void, FString*>(this, "AGameSession.InitOptions", Options); }
 	bool ProcessAutoLogin() { return NativeCall<bool>(this, "AGameSession.ProcessAutoLogin"); }
 	void OnLoginComplete(int LocalUserNum, bool bWasSuccessful, FUniqueNetId* UserId, FString* Error) { NativeCall<void, int, bool, FUniqueNetId*, FString*>(this, "AGameSession.OnLoginComplete", LocalUserNum, bWasSuccessful, UserId, Error); }
-	FString* ApproveLogin(FString* result, FString* Options, FString* authToken) { return NativeCall<FString*, FString*, FString*, FString*>(this, "AGameSession.ApproveLogin", result, Options, authToken); }
+	FString* ApproveLogin(FString* result, FString* Options, FString* authToken, UNetConnection* Connection) { return NativeCall<FString*, FString*, FString*, FString*, UNetConnection*>(this, "AGameSession.ApproveLogin", result, Options, authToken, Connection); }
 	void RegisterPlayer(APlayerController* NewPlayer, TSharedPtr<FUniqueNetId, 0>* UniqueId, bool bWasFromInvite) { NativeCall<void, APlayerController*, TSharedPtr<FUniqueNetId, 0>*, bool>(this, "AGameSession.RegisterPlayer", NewPlayer, UniqueId, bWasFromInvite); }
 	void UnregisterPlayer(APlayerController* ExitingPlayer) { NativeCall<void, APlayerController*>(this, "AGameSession.UnregisterPlayer", ExitingPlayer); }
 	bool AtCapacity(bool bSpectator, FString* AuthToken) { return NativeCall<bool, bool, FString*>(this, "AGameSession.AtCapacity", bSpectator, AuthToken); }
@@ -361,7 +365,7 @@ struct AShooterGameSession : AGameSession
 	void InitOptions(FString* Options) { NativeCall<void, FString*>(this, "AShooterGameSession.InitOptions", Options); }
 	void RegisterServer() { NativeCall<void>(this, "AShooterGameSession.RegisterServer"); }
 	void UpdatePublishedSession() { NativeCall<void>(this, "AShooterGameSession.UpdatePublishedSession"); }
-	FString* ApproveLogin(FString* result, FString* Options, FString* authToken) { return NativeCall<FString*, FString*, FString*, FString*>(this, "AShooterGameSession.ApproveLogin", result, Options, authToken); }
+	FString* ApproveLogin(FString* result, FString* Options, FString* authToken, UNetConnection* Connection) { return NativeCall<FString*, FString*, FString*, FString*, UNetConnection*>(this, "AShooterGameSession.ApproveLogin", result, Options, authToken, Connection); }
 	void OnCheckAuthTokenComplete(bool bWasSuccessful, FUniqueNetId* UserId) { NativeCall<void, bool, FUniqueNetId*>(this, "AShooterGameSession.OnCheckAuthTokenComplete", bWasSuccessful, UserId); }
 	void OnNumConnectedPlayersChanged(int NewPlayersCount) { NativeCall<void, int>(this, "AShooterGameSession.OnNumConnectedPlayersChanged", NewPlayersCount); }
 	void Tick(float __formal) { NativeCall<void, float>(this, "AShooterGameSession.Tick", __formal); }
