@@ -34,3 +34,8 @@ jobs:
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /t:Build /p:Platform=${{env.BUILD_PLATFORM}} /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:VcpkgConfiguration=${{env.BUILD_VCPKG}}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: test-upload
+        path: x64/Ark/version.dll
