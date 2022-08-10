@@ -27,7 +27,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.1
       
-    - run: Get-ChildItem Env:VSINSTALLDIR
+    - run:  ls env:\
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
