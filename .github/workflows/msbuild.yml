@@ -27,7 +27,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
-    - run: where msdia140.dll
+    - run: echo | where msdia140.dll
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
