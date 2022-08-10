@@ -25,9 +25,9 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v1.1
 
-    - run: echo | where msdia140.dll
+    - run: Get-Childitem –Path C:\ -Include *msdia140* -Recurse -ErrorAction SilentlyContinue
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
