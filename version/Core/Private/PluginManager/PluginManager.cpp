@@ -12,11 +12,6 @@
 
 namespace API
 {
-	PluginManager::PluginManager()
-	{
-		ArkApi::GetCommands().AddOnTimerCallback(L"PluginManager.DetectPluginChangesTimerCallback", &DetectPluginChangesTimerCallback);
-	}
-
 	PluginManager& PluginManager::Get()
 	{
 		static PluginManager instance;
@@ -255,7 +250,7 @@ namespace API
 		{
 			plugin_info_result["FullName"] = plugin_info.value("FullName", "");
 			plugin_info_result["Description"] = plugin_info.value("Description", "No description");
-			plugin_info_result["Version"] = plugin_info.value("Version", 1.0f);
+			plugin_info_result["Version"] = plugin_info.value("Version", 1.00f);
 			plugin_info_result["MinApiVersion"] = plugin_info.value("MinApiVersion", .0f);
 			plugin_info_result["Dependencies"] = plugin_info.value("Dependencies", std::vector<std::string>{});
 		}
@@ -308,7 +303,8 @@ namespace API
 		auto& pluginManager = Get();
 
 		const time_t now = time(nullptr);
-		if (now < pluginManager.next_reload_check_)
+		if (now < pluginManager.next_reload_check_
+			|| !pluginManager.enable_plugin_reload_)
 		{
 			return;
 		}
@@ -343,15 +339,17 @@ namespace API
 
 			if (fs::exists(new_plugin_file_path) && FindPlugin(filename) != loaded_plugins_.end())
 			{
+#ifndef ATLAS_GAME // not on ATLAS
 				// Save the world in case the unload/load procedure causes crash
 				if (save_world)
 				{
-					//Log::GetLog()->info("Saving world before reloading plugins ...");
-					//ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld();
-					//Log::GetLog()->info("World saved.");
+					Log::GetLog()->info("Saving world before reloading plugins ...");
+					ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld();
+					Log::GetLog()->info("World saved.");
+
 					save_world = false; // do not save again if multiple plugins are reloaded in this loop
 				}
-
+#endif
 				try
 				{
 					UnloadPlugin(filename);
@@ -359,15 +357,19 @@ namespace API
 					copy_file(new_plugin_file_path, plugin_file_path, fs::copy_options::overwrite_existing);
 					fs::remove(new_plugin_file_path);
 
+					// Wait 1 second before loading to let things clean up correctly...
+					// This will load the plugin in the next timer callback
+					//auto_reload_pending_plugins_.emplace_back(filename);
+
 					LoadPlugin(filename);
+
+					Log::GetLog()->info("Reloaded plugin - {}", filename);
 				}
 				catch (const std::exception& error)
 				{
 					Log::GetLog()->warn("({}) {}", __FUNCTION__, error.what());
 					continue;
 				}
-
-				Log::GetLog()->info("Reloaded plugin - {}", filename);
 			}
 		}
 	}

@@ -553,7 +553,7 @@ struct ULevel : ULevelBase
 
 // Game Mode
 
-struct AGameMode
+struct AGameMode : AInfo
 {
 	FName& MatchStateField() { return *GetNativePointerField<FName*>(this, "AGameMode.MatchState"); }
 	FString& OptionsStringField() { return *GetNativePointerField<FString*>(this, "AGameMode.OptionsString"); }
@@ -1094,6 +1094,7 @@ struct AShooterGameMode : AGameMode
 	AOceanDinoManager* TheOceanDinoManagerField() { return *GetNativePointerField<AOceanDinoManager**>(this, "AShooterGameMode.TheOceanDinoManager"); }
 	bool& bCheckedForOceanDinoManagerField() { return *GetNativePointerField<bool*>(this, "AShooterGameMode.bCheckedForOceanDinoManager"); }
 	bool& bParseServerToJsonField() { return *GetNativePointerField<bool*>(this, "AShooterGameMode.bParseServerToJson"); }
+	bool& bAllowFlyerSpeedLevelingField() { return *GetNativePointerField<bool*>(this, "AShooterGameMode.bAllowFlyerSpeedLeveling"); }
 
 	// Functions
 
@@ -1306,6 +1307,7 @@ struct AShooterGameMode : AGameMode
 	bool CheckJoinInProgress(bool bIsFromLogin, APlayerController* NewPlayer) { return NativeCall<bool, bool, APlayerController*>(this, "AShooterGameMode.CheckJoinInProgress", bIsFromLogin, NewPlayer); }
 	bool HandleNewPlayer(AShooterPlayerController* NewPlayer, UPrimalPlayerData* PlayerData, AShooterCharacter* PlayerCharacter, bool bIsFromLogin) { return NativeCall<bool, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool>(this, "AShooterGameMode.HandleNewPlayer", NewPlayer, PlayerData, PlayerCharacter, bIsFromLogin); }
 	void OnLogout(AController* Exiting) { NativeCall<void, AController*>(this, "AShooterGameMode.OnLogout", Exiting); }
+	FString* GetSaveDirectoryName(FString* result, ESaveType::Type SaveType) { return NativeCall<FString*, FString*, ESaveType::Type>(this, "AShooterGameMode.GetSaveDirectoryName", result, SaveType); }
 };
 
 struct UPrimalGameData : UObject
@@ -1579,4 +1581,9 @@ struct UGameInstance : UObject //, FExec
 	/*FWorldContext *WorldContext;
 	TArray<ULocalPlayer *, FDefaultAllocator> LocalPlayers;
 	FString PIEMapName;*/
+};
+
+struct ACustomActorList : AInfo
+{
+	TArray<AActor*> ActorList;
 };

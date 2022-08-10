@@ -12,6 +12,7 @@
 #include "../Templates/UnrealTemplate.h"
 #include "../Math/UnrealMathUtility.h"
 #include "../Misc/CString.h"
+#include "../Crc.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4244)
@@ -1614,13 +1615,9 @@ public:
 		if (!data)
 			return "";
 
-		const int size_needed = WideCharToMultiByte(CP_UTF8, 0, data, static_cast<int>(Len()), nullptr, 0,
-			nullptr, nullptr);
-
+		int size_needed = WideCharToMultiByte(CP_UTF8, 0, &data[0], (int)Len(), NULL, 0, NULL, NULL);
 		std::string str(size_needed, 0);
-		WideCharToMultiByte(CP_UTF8, 0, data, static_cast<int>(Len()), str.data(), size_needed, nullptr,
-			nullptr);
-
+		WideCharToMultiByte(CP_UTF8, 0, &data[0], (int)Len(), &str[0], size_needed, NULL, NULL);
 		return str;
 	}
 
@@ -1642,8 +1639,15 @@ public:
 
 		return FString(formatted_msg.c_str());
 	}
+
+	
 };
 
+FORCEINLINE uint32 GetTypeHash(const FString& Thing)
+{
+	uint32 Hash = FCrc::MemCrc32(&Thing, sizeof(FString));
+	return Hash;
+}
 
 template<>
 struct TContainerTraits<FString> : public TContainerTraitsBase<FString>

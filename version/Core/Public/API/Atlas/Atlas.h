@@ -15,14 +15,16 @@
 #include "../UE/UE.h"
 #include "Enums.h"
 #include "Inventory.h"
-#include "GameMode.h"
-#include "GameState.h"
 #include "Other.h"
 #include "Tribe.h"
 #include "Actor.h"
+#include "GameMode.h"
+#include "GameState.h"
 #include "PrimalStructure.h"
 
 #include "../../IApiUtils.h"
 #include "../../ICommands.h"
 #include "IHooks.h"
 #include "Tools.h"
+
+static unsigned int GetBuildUniqueId() { return NativeCall<unsigned int>(nullptr, "Global.GetBuildUniqueId"); }

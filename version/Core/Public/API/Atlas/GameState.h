@@ -1,6 +1,6 @@
 #pragma once
 
-struct AGameState
+struct AGameState : AInfo
 {
 	TSubclassOf<AGameMode>& GameModeClassField() { return *GetNativePointerField<TSubclassOf<AGameMode>*>(this, "AGameState.GameModeClass"); }
 	AGameMode * AuthorityGameModeField() { return *GetNativePointerField<AGameMode **>(this, "AGameState.AuthorityGameMode"); }
@@ -193,6 +193,8 @@ struct AShooterGameState : AGameState
 	bool& bInitializedGridInfoField() { return *GetNativePointerField<bool*>(this, "AShooterGameState.bInitializedGridInfo"); }
 	FString& ClusterIdField() { return *GetNativePointerField<FString*>(this, "AShooterGameState.ClusterId"); }
 	FString& ServerSessionNameField() { return *GetNativePointerField<FString*>(this, "AShooterGameState.ServerSessionName"); }
+	int& ServerMajorVersionField() { return *GetNativePointerField<int*>(this, "AShooterGameState.ServerMajorVersion"); }
+	int& ServerMinorVersionField() { return *GetNativePointerField<int*>(this, "AShooterGameState.ServerMinorVersion"); }
 	bool& bPreventTribeAlliancesField() { return *GetNativePointerField<bool*>(this, "AShooterGameState.bPreventTribeAlliances"); }
 	FString& LoadForceRespawnDinosTagField() { return *GetNativePointerField<FString*>(this, "AShooterGameState.LoadForceRespawnDinosTag"); }
 	bool& bOnlyDecayUnsnappedCoreStructuresField() { return *GetNativePointerField<bool*>(this, "AShooterGameState.bOnlyDecayUnsnappedCoreStructures"); }

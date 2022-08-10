@@ -3,6 +3,7 @@
 #include <comdef.h>
 #include <xmmintrin.h>
 
+#include "Crc.h"
 #include "Containers/TArray.h"
 #include "Containers/FString.h"
 #include "Containers/EnumAsByte.h"
@@ -10,6 +11,7 @@
 #include "API/Fields.h"
 #include "API/Enums.h"
 #include "API/UE/Math/Color.h"
+#include "Misc/GlobalObjectsArray.h"
 
 // Base types
 
@@ -30,25 +32,38 @@ struct FName
 	{
 	}
 
-	//static TStaticIndirectArrayThreadSafeRead<FNameEntry, 2097152, 16384> * GetNames() { return NativeCall<TStaticIndirectArrayThreadSafeRead<FNameEntry, 2097152, 16384> *>(nullptr, "FName.GetNames"); }
 	static FString* NameToDisplayString(FString* result, FString* InDisplayName, const bool bIsBool) { return NativeCall<FString*, FString*, FString*, const bool>(nullptr, "FName.NameToDisplayString", result, InDisplayName, bIsBool); }
 
-	//FName(const wchar_t* Name, EFindName FindType, bool __formal) { NativeCall<void, const wchar_t*, EFindName, bool>(this, "FName.FName", Name, FindType, __formal); }
-	FName(const wchar_t* Name, EFindName FindType, bool)
+	FName(const char* Name, EFindName FindType)
 	{
 		Init(Name, 0, FindType, true, -1);
 	}
-	
-	FName(const char* Name, EFindName FindType, bool __formal) { NativeCall<void, const char*, EFindName, bool>(this, "FName.FName", Name, FindType, __formal); }
+
 	bool operator==(const wchar_t* Other) { return NativeCall<bool, const wchar_t*>(this, "FName.operator==", Other); }
 	int Compare(FName* Other) { return NativeCall<int, FName*>(this, "FName.Compare", Other); }
-	void Init(const wchar_t* InName, int InNumber, EFindName FindType, bool bSplitName, int HardcodeIndex) { NativeCall<void, const wchar_t*, int, EFindName, bool, int>(this, "FName.Init", InName, InNumber, FindType, bSplitName, HardcodeIndex); }
 	void ToString(FString* Out) { NativeCall<void, FString*>(this, "FName.ToString", Out); }
+	FString ToString() const
+	{
+		FString out;
+		FName tmp = *this;
+
+		tmp.ToString(&out);
+
+		return out;
+	}
 	void AppendString(FString* Out) { NativeCall<void, FString*>(this, "FName.AppendString", Out); }
 	static bool SplitNameWithCheck(const wchar_t* OldName, wchar_t* NewName, int NewNameLen, int* NewNumber) { return NativeCall<bool, const wchar_t*, wchar_t*, int, int*>(nullptr, "FName.SplitNameWithCheck", OldName, NewName, NewNameLen, NewNumber); }
 	bool IsValidXName(FString InvalidChars, FText* Reason) { return NativeCall<bool, FString, FText*>(this, "FName.IsValidXName", InvalidChars, Reason); }
 	void Init(const char* InName, int InNumber, EFindName FindType, bool bSplitName, int HardcodeIndex) { NativeCall<void, const char*, int, EFindName, bool, int>(this, "FName.Init", InName, InNumber, FindType, bSplitName, HardcodeIndex); }
+	FString* GetPlainNameString(FString* result) { return NativeCall<FString*, FString*>(this, "FName.GetPlainNameString", result); }
+
+	bool operator==(const FName& Other) const { return Other.ToString() == this->ToString(); }
 };
+
+FORCEINLINE uint32 GetTypeHash(const FName& name)
+{
+	return FCrc::MemCrc32(&name, sizeof(FName));
+}
 
 struct FTransform
 {
@@ -67,10 +82,6 @@ struct FGuid
 	uint32_t B;
 	uint32_t C;
 	uint32_t D;
-};
-
-struct UFunction
-{
 };
 
 struct FBox
@@ -133,6 +144,15 @@ struct FDateTime
 {
 };
 
+struct FWeakObjectPtr
+{
+	int ObjectIndex;
+	int ObjectSerialNumber;
+
+	void operator=(UObject const* __that) { return NativeCall<void, UObject const*>(this, "FWeakObjectPtr.operator=", __that); }
+	bool IsValid() { return NativeCall<bool>(this, "FWeakObjectPtr.IsValid"); }
+};
+
 template <typename T>
 struct TWeakObjectPtr
 {
@@ -153,8 +173,40 @@ struct TWeakObjectPtr
 	{
 		return NativeCall<T*, bool>(this, "FWeakObjectPtr.Get", bEvenIfPendingKill);
 	}
+
+	FORCEINLINE operator bool()
+	{
+		return Get() != nullptr;
+	}
+
+	FORCEINLINE operator T* ()
+	{
+		return Get();
+	}
+
+	FORCEINLINE bool operator==(const TWeakObjectPtr<T>& __that) const
+	{
+		return this->ObjectIndex == __that.ObjectIndex
+			&& this->ObjectSerialNumber == __that.ObjectSerialNumber;
+	}
+
+	TWeakObjectPtr()
+	{}
+
+	TWeakObjectPtr(int index, int serialnumber)
+		:ObjectIndex(index),
+		ObjectSerialNumber(serialnumber)
+	{}
 };
 
+template <typename T>
+TWeakObjectPtr<T> GetWeakReference(T* object)
+{
+	FWeakObjectPtr tempWeak;
+	tempWeak.operator=(object);
+	TWeakObjectPtr<T> tempTWeak(tempWeak.ObjectIndex, tempWeak.ObjectSerialNumber);
+	return tempTWeak;
+}
 template <typename T>
 using TAutoWeakObjectPtr = TWeakObjectPtr<T>;
 
@@ -177,11 +229,28 @@ struct TSubclassOf
 struct IOnlinePlatformData
 {
 	void* vfptr;
+	FString* ToHumanReadableString(FString* result) { return NativeCall<FString*, FString*>(this, "IOnlinePlatformData.ToHumanReadableString", result); }
 };
 
 struct FUniqueNetId : IOnlinePlatformData
 {
+};
 
+struct FUniqueNetIdUInt64 : FUniqueNetId
+{
+	unsigned __int64& UniqueNetIdField() { return *GetNativePointerField<unsigned __int64*>(this, "FUniqueNetIdUInt64.UniqueNetId"); }
+
+	// Functions
+
+	FUniqueNetIdUInt64(FString* Str) { NativeCall<void, FString*>(this, "FUniqueNetIdUInt64.FUniqueNetIdUInt64", Str); }
+	FUniqueNetIdUInt64(FUniqueNetIdUInt64* Src) { NativeCall<void, FUniqueNetIdUInt64*>(this, "FUniqueNetIdUInt64.FUniqueNetIdUInt64", Src); }
+	FUniqueNetIdUInt64(FUniqueNetId* InUniqueNetId) { NativeCall<void, FUniqueNetId*>(this, "FUniqueNetIdUInt64.FUniqueNetIdUInt64", InUniqueNetId); }
+	FUniqueNetIdUInt64(uint64 InUniqueNetId) { NativeCall<void, uint64>(this, "FUniqueNetIdUInt64.FUniqueNetIdUInt64", InUniqueNetId); }
+
+	bool IsValid() { return NativeCall<bool>(this, "FUniqueNetIdUInt64.IsValid"); }
+	FString* ToDebugString(FString* result) { return NativeCall<FString*, FString*>(this, "FUniqueNetIdUInt64.ToDebugString", result); }
+	unsigned int GetHash() { return NativeCall<int>(this, "FUniqueNetIdUInt64.GetHash"); }
+	FString* ToString(FString* result) { return NativeCall<FString*, FString*>(this, "FUniqueNetIdUInt64.ToString", result); }
 };
 
 struct FUniqueNetIdSteam : FUniqueNetId
@@ -205,9 +274,9 @@ struct UObjectBase
 {
 	EObjectFlags& ObjectFlagsField() { return *GetNativePointerField<EObjectFlags*>(this, "UObjectBase.ObjectFlags"); }
 	int& InternalIndexField() { return *GetNativePointerField<int*>(this, "UObjectBase.InternalIndex"); }
-	UClass* ClassField() { return *GetNativePointerField<UClass * *>(this, "UObjectBase.Class"); }
+	UClass* ClassField() { return *GetNativePointerField<UClass**>(this, "UObjectBase.Class"); }
 	FName& NameField() { return *GetNativePointerField<FName*>(this, "UObjectBase.Name"); }
-	UObject* OuterField() { return *GetNativePointerField<UObject * *>(this, "UObjectBase.Outer"); }
+	UObject* OuterField() { return *GetNativePointerField<UObject**>(this, "UObjectBase.Outer"); }
 
 	// Functions
 
@@ -235,6 +304,7 @@ struct UObjectBaseUtility : public UObjectBase
 
 struct UObject : UObjectBaseUtility
 {
+	static UClass* GetPrivateStaticClass() { return NativeCall<UClass*>(nullptr, "UObject.GetPrivateStaticClass"); }
 	static UClass* StaticClass() { return NativeCall<UClass*>(nullptr, "UObject.StaticClass"); }
 	void ExecuteUbergraph(int EntryPoint) { NativeCall<void, int>(this, "UObject.ExecuteUbergraph", EntryPoint); }
 	bool AreAllOuterObjectsValid() { return NativeCall<bool>(this, "UObject.AreAllOuterObjectsValid"); }
@@ -271,7 +341,7 @@ struct UObject : UObjectBaseUtility
 
 struct UField : UObject
 {
-	UField* NextField() { return *GetNativePointerField<UField * *>(this, "UField.Next"); }
+	UField* NextField() { return *GetNativePointerField<UField**>(this, "UField.Next"); }
 
 	// Functions
 
@@ -283,15 +353,15 @@ struct UField : UObject
 
 struct UStruct : UField
 {
-	UStruct* SuperStructField() { return *GetNativePointerField<UStruct * *>(this, "UStruct.SuperStruct"); }
-	UField* ChildrenField() { return *GetNativePointerField<UField * *>(this, "UStruct.Children"); }
+	UStruct* SuperStructField() { return *GetNativePointerField<UStruct**>(this, "UStruct.SuperStruct"); }
+	UField* ChildrenField() { return *GetNativePointerField<UField**>(this, "UStruct.Children"); }
 	int& PropertiesSizeField() { return *GetNativePointerField<int*>(this, "UStruct.PropertiesSize"); }
 	TArray<unsigned char>& ScriptField() { return *GetNativePointerField<TArray<unsigned char>*>(this, "UStruct.Script"); }
 	int& MinAlignmentField() { return *GetNativePointerField<int*>(this, "UStruct.MinAlignment"); }
-	UProperty* PropertyLinkField() { return *GetNativePointerField<UProperty * *>(this, "UStruct.PropertyLink"); }
-	UProperty* RefLinkField() { return *GetNativePointerField<UProperty * *>(this, "UStruct.RefLink"); }
-	UProperty* DestructorLinkField() { return *GetNativePointerField<UProperty * *>(this, "UStruct.DestructorLink"); }
-	UProperty* PostConstructLinkField() { return *GetNativePointerField<UProperty * *>(this, "UStruct.PostConstructLink"); }
+	UProperty* PropertyLinkField() { return *GetNativePointerField<UProperty**>(this, "UStruct.PropertyLink"); }
+	UProperty* RefLinkField() { return *GetNativePointerField<UProperty**>(this, "UStruct.RefLink"); }
+	UProperty* DestructorLinkField() { return *GetNativePointerField<UProperty**>(this, "UStruct.DestructorLink"); }
+	UProperty* PostConstructLinkField() { return *GetNativePointerField<UProperty**>(this, "UStruct.PostConstructLink"); }
 	TArray<UObject*> ScriptObjectReferencesField() { return *GetNativePointerField<TArray<UObject*>*>(this, "UStruct.ScriptObjectReferences"); }
 
 	// Functions
@@ -307,6 +377,18 @@ struct UStruct : UField
 	void TagSubobjects(EObjectFlags NewFlags) { NativeCall<void, EObjectFlags>(this, "UStruct.TagSubobjects", NewFlags); }
 };
 
+struct UFunction : UStruct
+{
+	unsigned int FunctionFlags;
+	unsigned __int16 RepOffset;
+	char NumParms;
+	unsigned __int16 ParmsSize;
+	unsigned __int16 ReturnValueOffset;
+	unsigned __int16 RPCId;
+	unsigned __int16 RPCResponseId;
+	UProperty* FirstPropertyToInit;
+};
+
 struct FNativeFunctionLookup
 {
 	FName Name;
@@ -318,14 +400,14 @@ struct UClass : UStruct
 	unsigned int& ClassFlagsField() { return *GetNativePointerField<unsigned int*>(this, "UClass.ClassFlags"); }
 	unsigned __int64& ClassCastFlagsField() { return *GetNativePointerField<unsigned __int64*>(this, "UClass.ClassCastFlags"); }
 	int& ClassUniqueField() { return *GetNativePointerField<int*>(this, "UClass.ClassUnique"); }
-	UClass* ClassWithinField() { return *GetNativePointerField<UClass * *>(this, "UClass.ClassWithin"); }
-	UObject* ClassGeneratedByField() { return *GetNativePointerField<UObject * *>(this, "UClass.ClassGeneratedBy"); }
+	UClass* ClassWithinField() { return *GetNativePointerField<UClass**>(this, "UClass.ClassWithin"); }
+	UObject* ClassGeneratedByField() { return *GetNativePointerField<UObject**>(this, "UClass.ClassGeneratedBy"); }
 	bool& bIsGameClassField() { return *GetNativePointerField<bool*>(this, "UClass.bIsGameClass"); }
 	FName& ClassConfigNameField() { return *GetNativePointerField<FName*>(this, "UClass.ClassConfigName"); }
 	TArray<UField*> NetFieldsField() { return *GetNativePointerField<TArray<UField*>*>(this, "UClass.NetFields"); }
-	UObject* ClassDefaultObjectField() { return *GetNativePointerField<UObject * *>(this, "UClass.ClassDefaultObject"); }
+	UObject* ClassDefaultObjectField() { return *GetNativePointerField<UObject**>(this, "UClass.ClassDefaultObject"); }
 	bool& bCookedField() { return *GetNativePointerField<bool*>(this, "UClass.bCooked"); }
-	TMap<DWORD64, UFunction*> FuncMapField() { return *GetNativePointerField<TMap<DWORD64, UFunction*>*>(this, "UClass.FuncMap"); }
+	TMap<FName, UFunction*> FuncMapField() { return *GetNativePointerField<TMap<FName, UFunction*>*>(this, "UClass.FuncMap"); }
 	TArray<FNativeFunctionLookup>& NativeFunctionLookupTableField() { return *GetNativePointerField<TArray<FNativeFunctionLookup>*>(this, "UClass.NativeFunctionLookupTable"); }
 
 	// Functions
@@ -371,7 +453,7 @@ struct UBlueprintCore : UObject
 struct UBlueprint : UBlueprintCore
 {
 	TSubclassOf<UObject>& ParentClassField() { return *GetNativePointerField<TSubclassOf<UObject>*>(this, "UBlueprint.ParentClass"); }
-	UObject* PRIVATE_InnermostPreviousCDOField() { return *GetNativePointerField<UObject * *>(this, "UBlueprint.PRIVATE_InnermostPreviousCDO"); }
+	UObject* PRIVATE_InnermostPreviousCDOField() { return *GetNativePointerField<UObject**>(this, "UBlueprint.PRIVATE_InnermostPreviousCDO"); }
 	TArray<UActorComponent*> ComponentTemplatesField() { return *GetNativePointerField<TArray<UActorComponent*>*>(this, "UBlueprint.ComponentTemplates"); }
 	TEnumAsByte<enum EBlueprintType>& BlueprintTypeField() { return *GetNativePointerField<TEnumAsByte<enum EBlueprintType>*>(this, "UBlueprint.BlueprintType"); }
 	int& BlueprintSystemVersionField() { return *GetNativePointerField<int*>(this, "UBlueprint.BlueprintSystemVersion"); }
@@ -392,10 +474,10 @@ struct UProperty : UField
 	unsigned __int16& RepIndexField() { return *GetNativePointerField<unsigned __int16*>(this, "UProperty.RepIndex"); }
 	FName& RepNotifyFuncField() { return *GetNativePointerField<FName*>(this, "UProperty.RepNotifyFunc"); }
 	int& Offset_InternalField() { return *GetNativePointerField<int*>(this, "UProperty.Offset_Internal"); }
-	UProperty* PropertyLinkNextField() { return *GetNativePointerField<UProperty * *>(this, "UProperty.PropertyLinkNext"); }
-	UProperty* NextRefField() { return *GetNativePointerField<UProperty * *>(this, "UProperty.NextRef"); }
-	UProperty* DestructorLinkNextField() { return *GetNativePointerField<UProperty * *>(this, "UProperty.DestructorLinkNext"); }
-	UProperty* PostConstructLinkNextField() { return *GetNativePointerField<UProperty * *>(this, "UProperty.PostConstructLinkNext"); }
+	UProperty* PropertyLinkNextField() { return *GetNativePointerField<UProperty**>(this, "UProperty.PropertyLinkNext"); }
+	UProperty* NextRefField() { return *GetNativePointerField<UProperty**>(this, "UProperty.NextRef"); }
+	UProperty* DestructorLinkNextField() { return *GetNativePointerField<UProperty**>(this, "UProperty.DestructorLinkNext"); }
+	UProperty* PostConstructLinkNextField() { return *GetNativePointerField<UProperty**>(this, "UProperty.PostConstructLinkNext"); }
 
 	// Functions
 
@@ -420,7 +502,7 @@ struct UProperty : UField
 			throw std::invalid_argument("Object does not contain this property.");
 		if (sizeof(T) != this->ElementSizeField())
 			throw std::invalid_argument("Expected size does not match property size.");
-			return *((T*)(object + this->Offset_InternalField()));
+		return *((T*)(object + this->Offset_InternalField()));
 	}
 
 	template<typename T>
@@ -430,9 +512,31 @@ struct UProperty : UField
 			throw std::invalid_argument("Object does not contain this property.");
 		if (sizeof(T) != this->ElementSizeField())
 			throw std::invalid_argument("Expected size does not match property size.");
-			* ((T*)(object + this->Offset_InternalField())) = value;
+		*((T*)(object + this->Offset_InternalField())) = value;
 	}
 };
+
+struct  UScriptStruct : UStruct {};
+
+struct UObjectPropertyBase : UProperty
+{
+	UClass* PropertyClassField() { return *GetNativePointerField<UClass**>(this, "UObjectPropertyBase.PropertyClass"); }
+};
+
+struct  UStructProperty : UProperty
+{
+	UScriptStruct* StructField() { return *GetNativePointerField<UScriptStruct* *>(this, "UStructProperty.Struct"); }
+};
+
+template<typename InTCppType> struct TPropertyTypeFundamentals {};
+template<typename InTCppType, class TInPropertyBaseClass> 
+struct TProperty : public TInPropertyBaseClass, public TPropertyTypeFundamentals<InTCppType> {};
+template<typename InTCppType> struct TUObjectPropertyBase : public TProperty<InTCppType, UObjectPropertyBase> {};
+
+struct UObjectProperty : TUObjectPropertyBase<UObject*> { 
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UObjectProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+struct UClassProperty : UObjectProperty {};
 
 struct UNumericProperty : UProperty
 {
@@ -527,6 +631,26 @@ struct Globals
 	}
 
 	static DataValue<UEngine*> GEngine() { return { "Global.GEngine" }; }
+
+	static DataValue<FUObjectArray> GUObjectArray() { return { "Global.GUObjectArray" }; }
+
+	static FORCEINLINE UClass* FindClass(const std::string& name)
+	{
+		for (auto i = 0; i < Globals::GUObjectArray()().ObjObjects.NumElements; i++)
+		{
+			auto obj = Globals::GUObjectArray()().ObjObjects.GetObjectPtr(i)->Object;
+			if (obj != nullptr)
+			{
+				FString full_name;
+				obj->GetFullName(&full_name, nullptr);
+				if (name == full_name.ToString())
+				{
+					return (UClass*)obj;
+				}
+			}
+		}
+		return nullptr;
+	}
 };
 
 template <>
@@ -627,9 +751,40 @@ struct FAssetRegistry
 	//static void GetAssets(FAssetData ** First, const int Num, TDereferenceWrapper<FAssetData *, `FAssetRegistry::GetAssets'::`124'::FCompareFAssetData> * Predicate) { NativeCall<void, FAssetData **, const int, TDereferenceWrapper<FAssetData *, `FAssetRegistry::GetAssets'::`124'::FCompareFAssetData> *>(nullptr, "FAssetRegistry.GetAssets", First, Num, Predicate); }
 };
 
-struct UTexture2D
+enum EResourceSizeMode
+{
+	Exclusive = 0x0,
+	Inclusive = 0x1,
+	Open = 0x2,
+};
+
+struct FRenderResource
+{
+};
+
+struct FTexture : FRenderResource
+{
+};
+
+struct FTextureResource : FTexture
+{
+};
+
+struct UTexture : UObject
+{
+	static UClass* StaticClass() { return NativeCall<UClass*>(nullptr, "UTexture.StaticClass"); }
+};
+
+struct UTexture2D : UTexture
 {
 	static UClass* StaticClass() { return NativeCall<UClass*>(nullptr, "UTexture2D.StaticClass"); }
+	void GetMipData(int FirstMipToLoad, void** OutMipData) { return NativeCall<void, int, void**>(this, "UTexture2D.GetMipData", FirstMipToLoad, OutMipData); }
+	void UpdateResourceW() { return NativeCall<void>(this, "UTexture2D.UpdateResourceW"); }
+	FTextureResource* CreateResource() { return NativeCall<FTextureResource*>(this, "UTexture2D.CreateResource"); }
+	__int64 GetResourceSize(EResourceSizeMode type) { return NativeCall<__int64, EResourceSizeMode>(this, "UTexture2D.GetResourceSize", type); }
+	float GetSurfaceHeight() { return NativeCall<float>(this, "UTexture2D.GetSurfaceHeight"); }
+	int& SizeX_DEPRECATED() { return *GetNativePointerField<int*>(this, "UTexture2D.SizeX_DEPRECATED"); }
+	int& SizeY_DEPRECATED() { return *GetNativePointerField<int*>(this, "UTexture2D.SizeY_DEPRECATED"); }
 };
 
 struct FNavigationFilterFlags
@@ -664,7 +819,6 @@ struct UNavigationQueryFilter : UObject
 	FNavigationFilterFlags ExcludeFlags;
 };
 
-
 struct FCollisionQueryParams
 {
 	FName TraceTag;
@@ -690,16 +844,23 @@ struct FCollisionResponseParams
 struct FCollisionObjectQueryParams
 {
 	int ObjectTypesToQuery;
+
+	enum InitType
+	{
+		AllObjects = 0x0,
+		AllStaticObjects = 0x1,
+		AllDynamicObjects = 0x2,
+	};
 };
 
 struct FHttpRequestWinInet;
 
 struct FHttpResponseWinInet
 {
-	FHttpRequestWinInet* RequestField() { return *GetNativePointerField<FHttpRequestWinInet * *>(this, "FHttpResponseWinInet.Request"); }
+	FHttpRequestWinInet* RequestField() { return *GetNativePointerField<FHttpRequestWinInet**>(this, "FHttpResponseWinInet.Request"); }
 	int& AsyncBytesReadField() { return *GetNativePointerField<int*>(this, "FHttpResponseWinInet.AsyncBytesRead"); }
 	int& TotalBytesReadField() { return *GetNativePointerField<int*>(this, "FHttpResponseWinInet.TotalBytesRead"); }
-	TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> > & ResponseHeadersField() { return *GetNativePointerField<TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >*>(this, "FHttpResponseWinInet.ResponseHeaders"); }
+	TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >& ResponseHeadersField() { return *GetNativePointerField<TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >*>(this, "FHttpResponseWinInet.ResponseHeaders"); }
 	int& ResponseCodeField() { return *GetNativePointerField<int*>(this, "FHttpResponseWinInet.ResponseCode"); }
 	int& ContentLengthField() { return *GetNativePointerField<int*>(this, "FHttpResponseWinInet.ContentLength"); }
 	TArray<unsigned char>& ResponsePayloadField() { return *GetNativePointerField<TArray<unsigned char>*>(this, "FHttpResponseWinInet.ResponsePayload"); }
@@ -732,9 +893,9 @@ struct IHttpResponse : FHttpResponseWinInet
 struct FHttpRequestWinInet
 {
 	FString& RequestVerbField() { return *GetNativePointerField<FString*>(this, "FHttpRequestWinInet.RequestVerb"); }
-	TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> > & RequestHeadersField() { return *GetNativePointerField<TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >*>(this, "FHttpRequestWinInet.RequestHeaders"); }
+	TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >& RequestHeadersField() { return *GetNativePointerField<TMap<FString, FString, FDefaultSetAllocator, TDefaultMapKeyFuncs<FString, FString, 0> >*>(this, "FHttpRequestWinInet.RequestHeaders"); }
 	TArray<unsigned char>& RequestPayloadField() { return *GetNativePointerField<TArray<unsigned char>*>(this, "FHttpRequestWinInet.RequestPayload"); }
-	TSharedPtr<FHttpResponseWinInet, 1> & ResponseField() { return *GetNativePointerField<TSharedPtr<FHttpResponseWinInet, 1>*>(this, "FHttpRequestWinInet.Response"); }
+	TSharedPtr<FHttpResponseWinInet, 1>& ResponseField() { return *GetNativePointerField<TSharedPtr<FHttpResponseWinInet, 1>*>(this, "FHttpRequestWinInet.Response"); }
 	EHttpRequestStatus::Type& CompletionStatusField() { return *GetNativePointerField<EHttpRequestStatus::Type*>(this, "FHttpRequestWinInet.CompletionStatus"); }
 	void* ConnectionHandleField() { return *GetNativePointerField<void**>(this, "FHttpRequestWinInet.ConnectionHandle"); }
 	void* RequestHandleField() { return *GetNativePointerField<void**>(this, "FHttpRequestWinInet.RequestHandle"); }
@@ -764,7 +925,7 @@ struct FHttpRequestWinInet
 	FString* GenerateHeaderBuffer(FString* result, unsigned int ContentLength) { return NativeCall<FString*, FString*, unsigned int>(this, "FHttpRequestWinInet.GenerateHeaderBuffer", result, ContentLength); }
 	void CancelRequest() { NativeCall<void>(this, "FHttpRequestWinInet.CancelRequest"); }
 	EHttpRequestStatus::Type GetStatus() { return NativeCall<EHttpRequestStatus::Type>(this, "FHttpRequestWinInet.GetStatus"); }
-	TSharedPtr<IHttpResponse, 1> * GetResponse(TSharedPtr<IHttpResponse, 1> * result) { return NativeCall<TSharedPtr<IHttpResponse, 1>*, TSharedPtr<IHttpResponse, 1>*>(this, "FHttpRequestWinInet.GetResponse", result); }
+	TSharedPtr<IHttpResponse, 1>* GetResponse(TSharedPtr<IHttpResponse, 1>* result) { return NativeCall<TSharedPtr<IHttpResponse, 1>*, TSharedPtr<IHttpResponse, 1>*>(this, "FHttpRequestWinInet.GetResponse", result); }
 	void Tick(float DeltaSeconds) { NativeCall<void, float>(this, "FHttpRequestWinInet.Tick", DeltaSeconds); }
 };
 
@@ -788,5 +949,5 @@ struct FHttpModule
 	void StartupModule() { NativeCall<void>(this, "FHttpModule.StartupModule"); }
 	void ShutdownModule() { NativeCall<void>(this, "FHttpModule.ShutdownModule"); }
 	static FHttpModule* Get() { return NativeCall<FHttpModule*>(nullptr, "FHttpModule.Get"); }
-	TSharedRef<IHttpRequest, 0> * CreateRequest(TSharedRef<IHttpRequest, 0> * result) { return NativeCall<TSharedRef<IHttpRequest, 0>*, TSharedRef<IHttpRequest, 0>*>(this, "FHttpModule.CreateRequest", result); }
+	TSharedRef<IHttpRequest, 0>* CreateRequest(TSharedRef<IHttpRequest, 0>* result) { return NativeCall<TSharedRef<IHttpRequest, 0>*, TSharedRef<IHttpRequest, 0>*>(this, "FHttpModule.CreateRequest", result); }
 };

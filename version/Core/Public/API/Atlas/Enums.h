@@ -85,7 +85,6 @@ namespace EAttachLocation
 	};
 }
 
-
 namespace EEndPlayReason
 {
 	enum Type
@@ -314,18 +313,6 @@ namespace ETameUnitType
 		ANCHOREDSHIPS = 0x1,
 		UNANCHOREDSHIPS = 0x2,
 		MAX = 0x3
-	};
-}
-
-namespace ESaveType
-{
-	enum Type
-	{
-		Map = 0x0,
-		Profile = 0x1,
-		Tribe = 0x2,
-		CharacterSetting = 0x3,
-		All = 0x4
 	};
 }
 
@@ -576,7 +563,6 @@ namespace ECaptainOrder
 	};
 }
 
-
 namespace EWeaponType
 {
 	enum Type
@@ -812,6 +798,31 @@ namespace ETribeEntityType
 {
 	enum Type
 	{
+	};
+}
 
+namespace EServerOctreeGroup
+{
+	enum Type
+	{
+		STASISCOMPONENTS = 0x0,
+		PLAYERPAWNS = 0x1,
+		DINOPAWNS = 0x2,
+		PAWNS = 0x3,
+		STRUCTURES = 0x4,
+		TARGETABLEACTORS = 0x5,
+		SPATIALNETWORKEDACTORS = 0x6,
+		SPATIALNETWORKEDACTORS_DORMANT = 0x7,
+		ALL_SPATIAL = 0x8,
+		THERMALSTRUCTURES = 0x9,
+		STRUCTURES_CORE = 0xA,
+		DINOPAWNS_TAMED = 0xB,
+		PLAYERS_AND_TAMED_DINOS = 0xC,
+		DINOFOODCONTAINER = 0xD,
+		GRENADES = 0xE,
+		TREESAPTAPS = 0xF,
+		LARGEUNSTASISRANGE = 0x10,
+		TRAPS = 0x11,
+		MAX = 0x12,
 	};
 }

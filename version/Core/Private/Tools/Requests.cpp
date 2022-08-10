@@ -1,25 +1,66 @@
-#include <Requests.h>
+#define WIN32_LEAN_AND_MEAN
 
-#include <curl/curl.h>
+#include <Requests.h>
 
 #include "../IBaseApi.h"
 
+#include <sstream>
+
+#include <mutex>
+
+#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/HTTPRequest.h>
+#include <Poco/Net/HTTPResponse.h>
+#include <Poco/StreamCopier.h>
+#include <Poco/Path.h>
+#include <Poco/URI.h>
+#include <Poco/Exception.h>
+#include <Poco/UTF8String.h>
+#include <Poco/NullStream.h>
+#include <Poco/Net/SSLManager.h>
+#include <Poco/Net/InvalidCertificateHandler.h>
+#include <Poco/Net/RejectCertificateHandler.h>
+
 namespace API
 {
-	Requests::Requests()
-		: curl_(curl_multi_init())
+	class Requests::impl
 	{
-		curl_global_init(CURL_GLOBAL_DEFAULT);
+	public:
+		void WriteRequest(std::function<void(bool, std::string)> callback, bool success, std::string result);
 
-		game_api->GetCommands()->AddOnTickCallback("RequestsUpdate",
-		                                            std::bind(&Requests::Update, this));
+		Poco::Net::HTTPRequest ConstructRequest(const std::string& url, Poco::Net::HTTPClientSession*& session,
+			const std::vector<std::string>& headers, const std::string& request_type);
+
+		std::string GetResponse(Poco::Net::HTTPClientSession* session, Poco::Net::HTTPResponse& response);
+
+		void Update();
+	private:
+		struct RequestData
+		{
+			std::function<void(bool, std::string)> callback;
+			bool success;
+			std::string result;
+		};
+
+		std::vector<RequestData> RequestsVec_;
+		std::mutex RequestMutex_;
+	};
+
+	Requests::Requests()
+		: pimpl{ std::make_unique<impl>() } 
+	{ 
+		Poco::Net::initializeSSL();
+		Poco::SharedPtr<Poco::Net::InvalidCertificateHandler> ptrCert = new Poco::Net::RejectCertificateHandler(false);
+		Poco::Net::Context::Ptr ptrContext = new Poco::Net::Context(Poco::Net::Context::TLS_CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+		Poco::Net::SSLManager::instance().initializeClient(0, ptrCert, ptrContext);
+
+		game_api->GetCommands()->AddOnTickCallback("RequestsUpdate", std::bind(&impl::Update, this->pimpl.get())); 
 	}
 
-	Requests::~Requests()
-	{
-		game_api->GetCommands()->RemoveOnTickCallback("RequestsUpdate");
-
-		curl_global_cleanup();
+	Requests::~Requests() 
+	{ 
+		Poco::Net::uninitializeSSL();
+		game_api->GetCommands()->RemoveOnTickCallback("RequestsUpdate"); 
 	}
 
 	Requests& Requests::Get()
@@ -28,210 +69,267 @@ namespace API
 		return instance;
 	}
 
-	bool Requests::CreateGetRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
-	                                std::vector<std::string> headers)
+	void Requests::impl::WriteRequest(std::function<void(bool, std::string)> callback, bool success, std::string result)
 	{
-		CURL* handle = curl_easy_init();
-		if (!handle)
-		{
-			return false;
-		}
-
-		requests_[handle] = std::make_unique<Request>(callback);
-
-		curl_slist* chunk = nullptr;
-
-		for (const std::string& header : headers)
-		{
-			chunk = curl_slist_append(chunk, header.c_str());
-		}
-
-		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
-		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
-		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
-		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
-
-		curl_multi_add_handle(curl_, handle);
-
-		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
-
-		return res == CURLM_OK;
+		std::lock_guard<std::mutex> Guard(RequestMutex_);
+		RequestsVec_.push_back({ callback, success, result });
 	}
 
-	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
-	                                 const std::string& post_data, std::vector<std::string> headers)
+	Poco::Net::HTTPRequest Requests::impl::ConstructRequest(const std::string& url, Poco::Net::HTTPClientSession*& session,
+		const std::vector<std::string>& headers, const std::string& request_type)
 	{
-		CURL* handle = curl_easy_init();
-		if (!handle)
+		Poco::URI uri(url);
+
+		const std::string& path(uri.getPathAndQuery());
+
+		if (uri.getScheme() == "https")
+			session = new Poco::Net::HTTPSClientSession(uri.getHost(), uri.getPort());
+		else
+			session = new Poco::Net::HTTPClientSession(uri.getHost(), uri.getPort());
+
+		Poco::Net::HTTPRequest request(request_type, path, Poco::Net::HTTPMessage::HTTP_1_1);
+
+		if (!headers.empty())
 		{
-			return false;
-		}
-
-		requests_[handle] = std::make_unique<Request>(callback);
-
-		curl_slist* chunk = nullptr;
-
-		for (const std::string& header : headers)
-		{
-			chunk = curl_slist_append(chunk, header.c_str());
-		}
-
-		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
-		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
-		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
-		curl_easy_setopt(handle, CURLOPT_POST, 1);
-		curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_data.c_str());
-		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
-
-		curl_multi_add_handle(curl_, handle);
-
-		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
-
-		return res == CURLM_OK;
-	}
-
-	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
-	                                 const std::vector<std::string>& post_ids,
-	                                 const std::vector<std::string>& post_data, std::vector<std::string> headers)
-	{
-		CURL* handle = curl_easy_init();
-		if (!handle)
-		{
-			return false;
-		}
-
-		requests_[handle] = std::make_unique<Request>(callback);
-
-		curl_slist* chunk = nullptr;
-
-		for (const std::string& header : headers)
-		{
-			chunk = curl_slist_append(chunk, header.c_str());
-		}
-
-		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
-		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
-		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
-		curl_easy_setopt(handle, CURLOPT_POST, 1);
-
-		const std::string request = BuildRequest(handle, post_ids, post_data);
-
-		curl_easy_setopt(handle, CURLOPT_COPYPOSTFIELDS, request.c_str());
-		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
-
-		curl_multi_add_handle(curl_, handle);
-
-		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
-
-		return res == CURLM_OK;
-	}
-
-	std::string Requests::BuildRequest(CURL* handle, const std::vector<std::string>& post_ids,
-	                                   const std::vector<std::string>& post_data) const
-	{
-		if (post_ids.size() != post_data.size())
-			return "";
-
-		std::string result;
-
-		for (size_t i = 0; i < post_ids.size(); ++i)
-		{
-			const std::string& id = post_ids[i];
-			const std::string& data = post_data[i];
-
-			char* escaped_id = curl_easy_escape(handle, id.c_str(), static_cast<int>(id.size()));
-			if (!escaped_id)
-				return "";
-
-			char* escaped_data = curl_easy_escape(handle, data.c_str(), static_cast<int>(data.size()));
-			if (!escaped_data)
+			for (const auto& header : headers)
 			{
-				curl_free(escaped_id);
-				return "";
+				const std::string& key = header.substr(0, header.find(":"));
+				const std::string& data = header.substr(header.find(":") + 1);
+
+				request.add(key, data);
 			}
-
-			result += fmt::format("{}={}&", escaped_id, escaped_data);
-
-			curl_free(escaped_id);
-			curl_free(escaped_data);
 		}
 
-		result.pop_back(); // Remove last '&'
+		return request;
+	}
+
+	std::string Requests::impl::GetResponse(Poco::Net::HTTPClientSession* session, Poco::Net::HTTPResponse& response)
+	{
+		std::string result = "";
+
+		std::istream& rs = session->receiveResponse(response);
+
+		if (response.getStatus() == Poco::Net::HTTPResponse::HTTP_OK)
+		{
+			std::ostringstream oss;
+			Poco::StreamCopier::copyStream(rs, oss);
+			result = oss.str();
+		}
+		else
+		{
+			Poco::NullOutputStream null;
+			Poco::StreamCopier::copyStream(rs, null);
+			result = std::to_string(response.getStatus()) + " " + response.getReason();
+		}
 
 		return result;
 	}
 
-	bool Requests::CreateDeleteRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
-	                                   std::vector<std::string> headers)
+	bool Requests::CreateGetRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+		std::vector<std::string> headers)
 	{
-		CURL* handle = curl_easy_init();
-		if (!handle)
-		{
+		std::thread([this, url, callback, headers]
+			{
+				std::string Result = "";
+				Poco::Net::HTTPResponse response(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+				Poco::Net::HTTPClientSession* session = nullptr;
+
+				try
+				{
+					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_GET);
+
+					session->sendRequest(request);
+					Result = pimpl->GetResponse(session, response);
+				}
+				catch (const Poco::Exception& exc)
+				{
+					Log::GetLog()->error(exc.displayText());
+				}
+
+				const bool success = (int)response.getStatus() >= 200
+					&& (int)response.getStatus() < 300;
+
+				pimpl->WriteRequest(callback, success, Result);
+				delete session;
+				session = nullptr;
+			}
+		).detach();
+
+		return true;
+	}
+
+	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+		const std::string& post_data, std::vector<std::string> headers)
+	{
+		std::thread([this, url, callback, post_data, headers]
+			{
+				std::string Result = "";
+				Poco::Net::HTTPResponse response(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+				Poco::Net::HTTPClientSession* session = nullptr;
+
+				try
+				{
+					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
+
+					request.setContentType("application/x-www-form-urlencoded");
+					request.setContentLength(post_data.length());
+
+					std::ostream& OutputStream = session->sendRequest(request);
+					OutputStream << post_data;
+
+					Result = pimpl->GetResponse(session, response);
+				}
+				catch (const Poco::Exception& exc)
+				{
+					Log::GetLog()->error(exc.displayText());
+				}
+
+				const bool success = (int)response.getStatus() >= 200
+					&& (int)response.getStatus() < 300;
+
+				pimpl->WriteRequest(callback, success, Result);
+				delete session;
+				session = nullptr;
+			}
+		).detach();
+
+		return true;
+	}
+
+	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+		const std::string& post_data, const std::string& content_type, std::vector<std::string> headers)
+	{
+		std::thread([this, url, callback, post_data, content_type, headers]
+			{
+				std::string Result = "";
+				Poco::Net::HTTPResponse response(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+				Poco::Net::HTTPClientSession* session = nullptr;
+
+				try
+				{
+					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
+
+					request.setContentType(content_type);
+					request.setContentLength(post_data.length());
+
+					std::ostream& OutputStream = session->sendRequest(request);
+					OutputStream << post_data;
+
+					Result = pimpl->GetResponse(session, response);
+				}
+				catch (const Poco::Exception& exc)
+				{
+					Log::GetLog()->error(exc.displayText());
+				}
+
+				const bool success = (int)response.getStatus() >= 200
+					&& (int)response.getStatus() < 300;
+
+				pimpl->WriteRequest(callback, success, Result);
+				delete session;
+				session = nullptr;
+			}
+		).detach();
+
+		return true;
+	}
+
+	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+		const std::vector<std::string>& post_ids,
+		const std::vector<std::string>& post_data, std::vector<std::string> headers)
+	{
+		if (post_ids.size() != post_data.size())
 			return false;
-		}
 
-		requests_[handle] = std::make_unique<Request>(callback);
+		std::thread([this, url, callback, post_ids, post_data, headers]
+			{
+				std::string Result = "";
+				Poco::Net::HTTPResponse response(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+				Poco::Net::HTTPClientSession* session = nullptr;
 
-		curl_slist* chunk = nullptr;
+				try
+				{
+					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
 
-		for (const std::string& header : headers)
-		{
-			chunk = curl_slist_append(chunk, header.c_str());
-		}
+					std::string body;
 
-		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
-		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
-		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
-		curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
-		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
+					for (size_t i = 0; i < post_ids.size(); ++i)
+					{
+						const std::string& id = post_ids[i];
+						const std::string& data = post_data[i];
 
-		curl_multi_add_handle(curl_, handle);
+						body += fmt::format("{}={}&", Poco::UTF8::escape(id), Poco::UTF8::escape(data));
+					}
 
-		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
+					body.pop_back(); // Remove last '&'
 
-		return res == CURLM_OK;
+					request.setContentType("application/x-www-form-urlencoded");
+					request.setContentLength(body.size());
+
+					std::ostream& OutputStream = session->sendRequest(request);
+					OutputStream << body;
+
+					Result = pimpl->GetResponse(session, response);
+				}
+				catch (const Poco::Exception& exc)
+				{
+					Log::GetLog()->error(exc.displayText());
+				}
+
+				const bool success = (int)response.getStatus() >= 200
+					&& (int)response.getStatus() < 300;
+
+				pimpl->WriteRequest(callback, success, Result);
+				delete session;
+				session = nullptr;
+			}
+		).detach();
+
+		return true;
 	}
 
-	size_t Requests::WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+	bool Requests::CreateDeleteRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+		std::vector<std::string> headers)
 	{
-		if (userp == nullptr)
-			return 0;
+		std::thread([this, url, callback, headers]
+			{
+				std::string Result = "";
+				Poco::Net::HTTPResponse response(Poco::Net::HTTPResponse::HTTP_BAD_REQUEST);
+				Poco::Net::HTTPClientSession* session = nullptr;
 
-		static_cast<std::string*>(userp)->append(static_cast<char*>(contents), size * nmemb);
-		return size * nmemb;
+				try
+				{
+					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_DELETE);
+
+					session->sendRequest(request);
+					Result = pimpl->GetResponse(session, response);
+				}
+				catch (const Poco::Exception& exc)
+				{
+					Log::GetLog()->error(exc.displayText());
+				}
+
+				const bool success = (int)response.getStatus() >= 200
+					&& (int)response.getStatus() < 300;
+
+				pimpl->WriteRequest(callback, success, Result);
+				delete session;
+				session = nullptr;
+			}
+		).detach();
+
+		return true;
 	}
 
-	void Requests::Update()
+	void Requests::impl::Update()
 	{
-		if (handles_count_ == 0)
+		if (RequestsVec_.empty())
 			return;
 
-		curl_multi_perform(curl_, &handles_count_);
+		RequestMutex_.lock();
+		std::vector<RequestData> requests_temp = std::move(RequestsVec_);
+		RequestMutex_.unlock();
 
-		CURLMsg* m;
-		int msgq;
-		while ((m = curl_multi_info_read(curl_, &msgq)) != nullptr)
-		{
-			if (m && m->msg == CURLMSG_DONE)
-			{
-				CURL* handle = m->easy_handle;
-
-				auto& request = requests_[handle];
-				request->callback(m->data.result == CURLE_OK, move(request->read_buffer));
-
-				requests_.erase(handle);
-
-				curl_multi_remove_handle(curl_, handle);
-				curl_easy_cleanup(handle);
-			}
-		}
+		for (const auto& request : requests_temp) { request.callback(request.success, request.result); }
 	}
 } // namespace API

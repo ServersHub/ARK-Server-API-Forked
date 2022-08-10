@@ -8,12 +8,11 @@
 #include "Core/Public/Tools.h"
 
 #pragma comment(lib, "libMinHook.x64.lib")
-#pragma comment(lib, "libcurl.lib")
-#pragma comment(lib, "libeay32.lib")
-#pragma comment(lib, "ssleay32.lib")
+#pragma comment(lib, "Crypt32.lib")
+#pragma comment(lib, "Iphlpapi.lib")
 
 HINSTANCE m_hinst_dll = nullptr;
-extern "C" UINT_PTR mProcs[17]{0};
+extern "C" UINT_PTR mProcs[17]{ 0 };
 
 LPCSTR import_names[] = {
 	"GetFileVersionInfoA", "GetFileVersionInfoByHandle", "GetFileVersionInfoExA", "GetFileVersionInfoExW",
@@ -27,11 +26,12 @@ void OpenConsole()
 	AllocConsole();
 	FILE* p_cout;
 	freopen_s(&p_cout, "conout$", "w", stdout);
+	SetConsoleOutputCP(CP_UTF8);
 }
 
 std::time_t GetFileWriteTime(const std::filesystem::path& filename)
 {
-	struct _stat64 fileInfo{};
+	struct _stat64 fileInfo {};
 	if (_wstati64(filename.wstring().c_str(), &fileInfo) != 0)
 	{
 		throw std::runtime_error("Failed to get last write time.");

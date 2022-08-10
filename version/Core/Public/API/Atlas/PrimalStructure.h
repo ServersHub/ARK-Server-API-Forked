@@ -310,6 +310,8 @@ struct APrimalStructure : APrimalTargetableActor
 	float& PlacementInitialTracePointOffsetForCeilingField() { return *GetNativePointerField<float*>(this, "APrimalStructure.PlacementInitialTracePointOffsetForCeiling"); }
 	float& PlacementOffsetForCeilingField() { return *GetNativePointerField<float*>(this, "APrimalStructure.PlacementOffsetForCeiling"); }
 	TArray<TSubclassOf<APrimalStructure>>& StructuresAllowedToBeCeilingField() { return *GetNativePointerField<TArray<TSubclassOf<APrimalStructure>>*>(this, "APrimalStructure.StructuresAllowedToBeCeiling"); }
+	float& PreventPlacingNearEnemyRadiusField() { return *GetNativePointerField<float*>(this, "APrimalStructure.PreventPlacingNearEnemyRadius"); }
+
 
 	// Bit fields
 
@@ -776,6 +778,33 @@ struct APrimalStructure : APrimalTargetableActor
 	void UpdateTribeGroupStructureRank(char NewRank) { NativeCall<void, char>(this, "APrimalStructure.UpdateTribeGroupStructureRank", NewRank); }
 };
 
+struct FRequiredResource
+{
+	TSubclassOf<UPrimalItem> RequiredResourceType;
+	int RequiredResourceCount;
+};
+
+struct FStageRequirement
+{
+	int WaitingTimeInDays;
+	TArray<FRequiredResource, FDefaultAllocator> RequiredResources;
+	FName StageBarrierComponentCustomTag;
+};
+
+struct APrimalStructureMonumentThirdTierEgyptTemple : APrimalStructure {
+	TArray<FStageRequirement>& StageRequirementsField() { return *GetNativePointerField<TArray<FStageRequirement>*>(this, "APrimalStructureMonumentThirdTierEgyptTemple.StageRequirements"); }
+	// Functions
+	void UpdateStageBarrierComponents() { NativeCall<void>(this, "APrimalStructureMonumentThirdTierEgyptTemple.UpdateStageBarrierComponents"); }
+
+	
+	//UpdateStageBarrierComponents
+	static UClass* GetPrivateStaticClass() { return NativeCall<UClass*>(nullptr, "APrimalStructureMonumentThirdTierEgyptTemple.GetPrivateStaticClass"); }
+	static UClass* GetPrivateStaticClass(const wchar_t* Package) { return NativeCall<UClass*, const wchar_t*>(nullptr, "APrimalStructureMonumentThirdTierEgyptTemple.GetPrivateStaticClass", Package); }
+	static void StaticRegisterNativesAPrimalStructureMonumentThirdTierEgyptTemple() { NativeCall<void>(nullptr, "APrimalStructureMonumentThirdTierEgyptTemple.StaticRegisterNativesAPrimalStructureMonumentThirdTierEgyptTemple"); }
+};
+
+
+
 struct APrimalStructureBed : APrimalStructure
 {
 	bool& bInLandClaimedFlagRangeField() { return *GetNativePointerField<bool*>(this, "APrimalStructureBed.bInLandClaimedFlagRange"); }
@@ -1133,6 +1162,11 @@ struct APrimalStructureItemContainer : APrimalStructure
 	void NetUpdateBoxName(FString * NewName) { NativeCall<void, FString *>(this, "APrimalStructureItemContainer.NetUpdateBoxName", NewName); }
 	void PowerGeneratorBuiltNearbyPoweredStructure(APrimalStructureItemContainer * PoweredStructure) { NativeCall<void, APrimalStructureItemContainer *>(this, "APrimalStructureItemContainer.PowerGeneratorBuiltNearbyPoweredStructure", PoweredStructure); }
 	static void StaticRegisterNativesAPrimalStructureItemContainer() { NativeCall<void>(nullptr, "APrimalStructureItemContainer.StaticRegisterNativesAPrimalStructureItemContainer"); }
+};
+
+struct APrimalStructureStaticNodeContainer : APrimalStructureItemContainer
+{
+	static UClass* GetPrivateStaticClass(const wchar_t* Package) { return NativeCall<UClass*, const wchar_t*>(nullptr, "APrimalStructureStaticNodeContainer.GetPrivateStaticClass", Package); }
 };
 
 struct APrimalStructureTurret : APrimalStructureItemContainer
@@ -1686,6 +1720,12 @@ struct APrimalRaft : APrimalDinoCharacter
 	void NetClientInterpolateTo(FVector NewLocation, FRotator NewRotation) { NativeCall<void, FVector, FRotator>(this, "APrimalRaft.NetClientInterpolateTo", NewLocation, NewRotation); }
 	void NetSetGroupsStructuresCaptainOrder(ECaptainOrder::Type CaptainOrder, int GroupIndex) { NativeCall<void, ECaptainOrder::Type, int>(this, "APrimalRaft.NetSetGroupsStructuresCaptainOrder", CaptainOrder, GroupIndex); }
 	static void StaticRegisterNativesAPrimalRaft() { NativeCall<void>(nullptr, "APrimalRaft.StaticRegisterNativesAPrimalRaft"); }
+};
+
+struct  APrimalStructureSeating : APrimalStructureItemContainer {};
+
+struct  APrimalStructureSeating_DriverSeat : APrimalStructureSeating
+{
 };
 
 struct APrimalStructureSail

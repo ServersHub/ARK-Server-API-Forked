@@ -431,6 +431,12 @@
     <ClInclude Include="Core\Private\Commands.h">
       <Filter>Core\Private</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Public\API\UE\Crc.h">
+      <Filter>Core\Public\API\UE</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Private\Ark\Globals.h">
+      <Filter>Core\Private\Ark</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="version.cpp" />

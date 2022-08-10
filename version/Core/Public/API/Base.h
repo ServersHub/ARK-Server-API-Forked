@@ -70,8 +70,15 @@ struct UGameplayStatics;
 struct UObjectBase;
 struct UObjectBaseUtility;
 struct UClass;
+struct FOutputDevice {};
 struct UObject;
+struct UFoliageType;
+struct UObjectSerializer;
+struct UFunction;
+struct UStaticMeshSocket;
+struct UStaticMesh;
 struct AActor;
+struct AMissionType;
 struct UBlueprintCore;
 struct Globals;
 struct ADroppedItem;
@@ -103,12 +110,13 @@ struct FRadialDamageEvent {};
 struct FMinimalViewInfo;
 struct FItemCraftingConsumptionReplenishment {};
 struct FActorClassAttachmentInfo {};
-struct FSupplyCrateItemSet {};
+struct FSupplyCrateItemSet ;
 struct UPrimalSupplyCrateItemSets;
 struct FItemAttachmentInfo {};
 struct FItemStatInfo;
 struct FSaddlePassengerSeatDefinition {};
 struct APrimalStructureTurret;
+struct APrimalStructureItemContainer_CropPlot;
 struct FKey {};
 struct AWorldSettings;
 struct UNetDriver;
@@ -139,11 +147,12 @@ struct UStaticMesh;
 struct UPrimalLocalProfile;
 struct UPrimalBuffPersistentData;
 struct UCharacterMovementComponent;
-struct FDinoExtraDefaultItemList {};
+struct FDinoExtraDefaultItemList;
 struct FWeaponData {};
 struct FAIRequestID {};
 struct UPrimalGameData;
 struct UEngine;
+struct UGameEngine;
 struct UPrimalGlobals;
 struct APrimalStructurePlacer;
 struct UActorChannel;
@@ -164,7 +173,7 @@ struct FPrimalSnapshotPose {};
 struct ULeaderboard {};
 struct FReplicatePingData {};
 struct FTargetingTeamChanged {};
-struct FArchive {};
+struct FArchive;
 struct FSpawnPointInfo;
 struct FPrimalPlayerCharacterConfigStructReplicated;
 struct UPlayerInput {};
@@ -185,8 +194,8 @@ struct UStructurePaintingComponent {};
 struct FPaintItem {};
 struct APrimalStructureElevatorPlatform {};
 struct FBoneDamageAdjuster {};
-struct AShooterProjectile {};
-struct APrimalBuff_Grappled {};
+struct AShooterProjectile;
+struct APrimalBuff_Grappled;
 struct APrimalStructureLadder {};
 struct APrimalProjectileBoomerang {};
 struct FWeaponEvent {};
@@ -217,6 +226,7 @@ struct UPrimalWorldSettingsEventOverrides {};
 struct FCropItemPhaseData {};
 struct FStructureVariant {};
 struct AMissionType;
+struct FMultiUseEntry;
 
 template <typename T>
 struct FDataStore;
@@ -293,7 +303,22 @@ struct FNetDriverDefinition;
 struct FWorldContext;
 struct FViewport;
 struct FHardwareSurveyResults;
-struct FCanvas;
+struct FCanvas
+{
+	enum EElementType
+	{
+		ET_Line = 0x0,
+		ET_Triangle = 0x1,
+		ET_MAX = 0x2,
+	};
+
+	enum ECanvasAllowModes
+	{
+		Allow_Flush = 0x1,
+		Allow_DeleteOnRender = 0x2,
+	};
+
+};
 struct FSeamlessTravelHandler;
 struct FEvent;
 struct FStreamableManager;
@@ -348,6 +373,12 @@ struct FShooterOnlineSessionSettings;
 struct FShooterOnlineSearchSettings;
 struct FOnlineSessionSearchResult;
 struct FMemoryArchive;
+struct FMemoryReader;
+struct FMemoryWriter;
+struct FObjectReader;
+struct FObjectWriter;
+struct FCustomVersion;
+struct FCustomVersionContainer;
 
 struct FAttachmentPoint;
 
@@ -558,7 +589,11 @@ struct UObjectBase;
 struct UObjectBaseUtility;
 struct UClass;
 struct UObject;
+struct UObjectSerializer;
+struct UStaticMeshSocket;
+struct UStaticMesh;
 struct AActor;
+struct AMissionType;
 struct UBlueprintCore;
 struct Globals;
 struct ADroppedItem;
@@ -589,10 +624,12 @@ struct FMinimalViewInfo;
 struct UPrimalSupplyCrateItemSets;
 struct FItemStatInfo;
 struct APrimalStructureTurret;
+struct APrimalStructureItemContainer_CropPlot;
 struct AWorldSettings;
+struct APrimalWorldSettings;
+struct FWeightedObjectList;
 struct UNetDriver;
 struct AHUD;
-struct APrimalStructureExplosive;
 struct UPaintingTexture;
 struct APrimalStructureExplosiveTransGPS;
 struct ITargetableInterface;
@@ -614,6 +651,7 @@ struct UPrimalBuffPersistentData;
 struct UCharacterMovementComponent;
 struct UPrimalGameData;
 struct UEngine;
+struct UGameEngine;
 struct UPrimalGlobals;
 struct APrimalStructurePlacer;
 
@@ -624,6 +662,12 @@ struct FOceanHarvestedEntry;
 struct AOceanHarvestManager;
 struct FAttachedInstancedHarvestingElement;
 
+struct UBehaviorTree;
+
+struct FSeamlessIslandInfo;
+struct AInfo;
+
+struct UInstancedStaticMeshComponent;
 
 struct BitField
 {
