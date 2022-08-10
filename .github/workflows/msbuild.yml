@@ -26,8 +26,8 @@ jobs:
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-
-    - run: Get-Childitem –Path C:\ -Include *msdia140* -Recurse -ErrorAction SilentlyContinue
+      
+    - run: echo %PATH%
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
