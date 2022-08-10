@@ -27,15 +27,15 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - run: where msdia140.dll
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /t:Build /p:Platform=${{env.BUILD_PLATFORM}} /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:VcpkgConfiguration=${{env.BUILD_VCPKG}}
 
+    - run: mkdir -p x64/Ark/ArkApi/Plugins
+
     - uses: actions/upload-artifact@v3
       with:
         name: test-upload
-        path: x64/Ark/version.dll
+        path: x64/Ark/
