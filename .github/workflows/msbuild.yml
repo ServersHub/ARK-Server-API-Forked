@@ -27,7 +27,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.1
       
-    - run:  ls env:\
+    - run:  C:\ProgramData\Chocolatey\bin\vswhere.exe -products * -requires Microsoft.Component.MSBuild -property installationPath -latest
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
