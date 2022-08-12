@@ -2,13 +2,28 @@
 
 ## Supported Versions
 
-Below you'll find the framework-supported released versions. Please ensure you're using the latest framework when running and hosting it on your video gaming communities.
+The supported versions of the framework can be found in the table below.
+<table>
+  <thead>
+    <tr>
+      <th>Version</th>
+      <th>Supported</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr >
+      <td align="left"> >= 3.5.4</td>
+      <td align="center">✔</td>
+    </tr>
+    <tr>
+      <td align="left"> <= 3.5.3</td>
+      <td align="center">❌</td>
+    </tr>
+  </tbody>
+</table>
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 3.5.4   | :white_check_mark: |
-| < 3.5.3   | :x:                |
+Please ensure that you are running the latest version of the API on any production servers.
 
 ## Reporting a Vulnerability
 
-If you've located a glitch or exploit in the latest framework build, you can join our discord server and report the bug directly or file it as an "issue" under the Github issues page. Our Discord server is located at https://gameservershub.com/forums/pages/discord/
+If the event that you've found a vulnerabilty that is unpatched in a supported framework build, you can join our [Discord](https://gameservershub.com/forums/pages/discord/) server to report the issue directly, or you can report it as an [Issue directly on GitHub](../../issues).
