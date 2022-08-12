@@ -35,9 +35,9 @@ Currently this project is ran and supported by [GameServersHub](https://gameserv
   - `\ARK\ShooterGame\Win64\logs\ArkApi.log`
   - `\ARK\ShooterGame\Saved\Logs`
 
-You may join our <a href="https://gameservershub.com/forums/pages/discord/">discord server</a> if you have any questions/feedback or want general support regarding ArkServerAPI.
+You may join our [Discord server](https://gameservershub.com/forums/pages/discord/) if you have any questions/feedback or want general support regarding ArkServerAPI.
 
 ## Disclaimers
 
-- This project is not endorsed or afffilated with Studio Wildcard nor shall it ever be considered endorsed or affilated with Studio Wildcard previously, or in the future. This is a fan project aimed at extending the offical server executable that is distrubted with the game. Studio Wildcard retains all ownership over the origial server files, game copyrights, etc.
-- Unless specified otherwise, the Ark Server API is distrubted under the MIT license, which can be found [here](LICENSE.TXT)
+- This project is not endorsed or affiliated with Studio Wildcard, nor shall it ever be considered endorsed or affiliated with Studio Wildcard previously, or in the future. This is a fan project aimed at extending the official server executable that is distributed with the game. Studio Wildcard retains all ownership over the original server files, game copyrights, etc.
+- Unless specified otherwise, the Ark Server API is distributed under the MIT license, which can be found [here](LICENSE.TXT)
