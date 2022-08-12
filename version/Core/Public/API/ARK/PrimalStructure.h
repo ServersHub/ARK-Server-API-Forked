@@ -459,7 +459,7 @@ struct APrimalStructure : APrimalTargetableActor
 	bool Die(float KillingDamage, FDamageEvent* DamageEvent, AController* Killer, AActor* DamageCauser) { return NativeCall<bool, float, FDamageEvent*, AController*, AActor*>(this, "APrimalStructure.Die", KillingDamage, DamageEvent, Killer, DamageCauser); }
 	void PlayDying(float KillingDamage, FDamageEvent* DamageEvent, APawn* InstigatingPawn, AActor* DamageCauser) { NativeCall<void, float, FDamageEvent*, APawn*, AActor*>(this, "APrimalStructure.PlayDying", KillingDamage, DamageEvent, InstigatingPawn, DamageCauser); }
 	void DestroyStructuresPlacedOnFloor() { NativeCall<void>(this, "APrimalStructure.DestroyStructuresPlacedOnFloor"); }
-	static void ReprocessTree(TArray<APrimalStructure*>* StartingStructures, AController* InstigatorController, AActor* DamageCauser) { NativeCall<void, TArray<APrimalStructure*>*, AController*, AActor*>(nullptr, "APrimalStructure.ReprocessTree", StartingStructures, InstigatorController, DamageCauser); }
+	static void ReprocessTree(TArray<APrimalStructure*>* StartingStructures, AController* InstigatorController, AActor* DamageCauser, bool bPickup) { NativeCall<void, TArray<APrimalStructure*>*, AController*, AActor*, bool>(nullptr, "APrimalStructure.ReprocessTree", StartingStructures, InstigatorController, DamageCauser, bPickup); }
 	static void FindFoundations(TArray<APrimalStructure*>* StartingStructures, TArray<APrimalStructure*>* Foundations) { NativeCall<void, TArray<APrimalStructure*>*, TArray<APrimalStructure*>*>(nullptr, "APrimalStructure.FindFoundations", StartingStructures, Foundations); }
 	static void FindFoundations(APrimalStructure* StartingStructure, TArray<APrimalStructure*>* Foundations) { NativeCall<void, APrimalStructure*, TArray<APrimalStructure*>*>(nullptr, "APrimalStructure.FindFoundations", StartingStructure, Foundations); }
 	static void CullAgainstFoundations(TArray<APrimalStructure*>* StartingStructures, TArray<APrimalStructure*>* Foundations) { NativeCall<void, TArray<APrimalStructure*>*, TArray<APrimalStructure*>*>(nullptr, "APrimalStructure.CullAgainstFoundations", StartingStructures, Foundations); }
@@ -468,8 +468,8 @@ struct APrimalStructure : APrimalTargetableActor
 	static void FlagConnectionsLessThan(APrimalStructure** StartingStructure, int Connections, TArray<APrimalStructure*>* StructuresToDestroy) { NativeCall<void, APrimalStructure**, int, TArray<APrimalStructure*>*>(nullptr, "APrimalStructure.FlagConnectionsLessThan", StartingStructure, Connections, StructuresToDestroy); }
 	static void FlagReachable(TArray<APrimalStructure*>* Foundations) { NativeCall<void, TArray<APrimalStructure*>*>(nullptr, "APrimalStructure.FlagReachable", Foundations); }
 	static void FlagReachable(APrimalStructure* StartingStructure) { NativeCall<void, APrimalStructure*>(nullptr, "APrimalStructure.FlagReachable", StartingStructure); }
-	static void CleanUpTree(TArray<APrimalStructure*>* StartingStructures, AController* InstigatorController, AActor* DamageCauser) { NativeCall<void, TArray<APrimalStructure*>*, AController*, AActor*>(nullptr, "APrimalStructure.CleanUpTree", StartingStructures, InstigatorController, DamageCauser); }
-	static void CleanUpTree(APrimalStructure* StartingStructure, AController* InstigatorController, AActor* DamageCauser) { NativeCall<void, APrimalStructure*, AController*, AActor*>(nullptr, "APrimalStructure.CleanUpTree", StartingStructure, InstigatorController, DamageCauser); }
+	static void CleanUpTree(TArray<APrimalStructure*>* StartingStructures, AController* InstigatorController, AActor* DamageCauser, bool bPickup) { NativeCall<void, TArray<APrimalStructure*>*, AController*, AActor*, bool>(nullptr, "APrimalStructure.CleanUpTree", StartingStructures, InstigatorController, DamageCauser, bPickup); }
+	static void CleanUpTree(APrimalStructure* StartingStructure, AController* InstigatorController, AActor* DamageCauser, unsigned int depth, bool bPickup) { NativeCall<void, APrimalStructure*, AController*, AActor*, unsigned int, bool>(nullptr, "APrimalStructure.CleanUpTree", StartingStructure, InstigatorController, DamageCauser, depth, bPickup); }
 	void RemoveLinkedStructure(APrimalStructure* Structure, AController* InstigatorController, AActor* DamageCauser) { NativeCall<void, APrimalStructure*, AController*, AActor*>(this, "APrimalStructure.RemoveLinkedStructure", Structure, InstigatorController, DamageCauser); }
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>* OutLifetimeProps) { NativeCall<void, TArray<FLifetimeProperty>*>(this, "APrimalStructure.GetLifetimeReplicatedProps", OutLifetimeProps); }
 	void OnRep_CurrentVariant() { NativeCall<void>(this, "APrimalStructure.OnRep_CurrentVariant"); }
@@ -538,7 +538,7 @@ struct APrimalStructure : APrimalTargetableActor
 	void ClearCustomColors_Implementation() { NativeCall<void>(this, "APrimalStructure.ClearCustomColors_Implementation"); }
 	bool PreventPlacingOnFloorClass(TSubclassOf<APrimalStructure> FloorClass) { return NativeCall<bool, TSubclassOf<APrimalStructure>>(this, "APrimalStructure.PreventPlacingOnFloorClass", FloorClass); }
 	void UpdateTribeGroupStructureRank_Implementation(char NewRank) { NativeCall<void, char>(this, "APrimalStructure.UpdateTribeGroupStructureRank_Implementation", NewRank); }
-	bool AllowPlacingOnSaddleParentClass(APrimalDinoCharacter* theDino, bool bForcePrevent) { return NativeCall<bool, APrimalDinoCharacter*, bool>(this, "APrimalStructure.AllowPlacingOnSaddleParentClass", theDino, bForcePrevent); }
+	bool AllowPlacingOnSaddleParentClass(APrimalDinoCharacter* theDino, bool bForcePrevent, int* overrideReturnCode, AShooterPlayerController* PC) { return NativeCall<bool, APrimalDinoCharacter*, bool, int*, AShooterPlayerController*>(this, "APrimalStructure.AllowPlacingOnSaddleParentClass", theDino, bForcePrevent, overrideReturnCode, PC); }
 	static APrimalStructure* GetClosestStructureToPoint(UWorld* ForWorld, FVector AtPoint, float OverlapRadius) { return NativeCall<APrimalStructure*, UWorld*, FVector, float>(nullptr, "APrimalStructure.GetClosestStructureToPoint", ForWorld, AtPoint, OverlapRadius); }
 	float GetStructureDemolishTime() { return NativeCall<float>(this, "APrimalStructure.GetStructureDemolishTime"); }
 	bool IsOnlyLinkedToFastDecayStructures() { return NativeCall<bool>(this, "APrimalStructure.IsOnlyLinkedToFastDecayStructures"); }
@@ -585,7 +585,7 @@ struct APrimalStructure : APrimalTargetableActor
 	void BPOnDemolish(APlayerController* ForPC, AActor* DamageCauser) { NativeCall<void, APlayerController*, AActor*>(this, "APrimalStructure.BPOnDemolish", ForPC, DamageCauser); }
 	void BPOnStructurePickup(APlayerController* PlayerController, TSubclassOf<UPrimalItem> ItemType, UPrimalItem* NewlyPickedUpItem, bool bIsQuickPickup) { NativeCall<void, APlayerController*, TSubclassOf<UPrimalItem>, UPrimalItem*, bool>(this, "APrimalStructure.BPOnStructurePickup", PlayerController, ItemType, NewlyPickedUpItem, bIsQuickPickup); }
 	void BPOnVariantSwitch(int NewVariantIndex) { NativeCall<void, int>(this, "APrimalStructure.BPOnVariantSwitch", NewVariantIndex); }
-	bool BPOverrideAllowStructureAccess(AShooterPlayerController* ForPC, bool bIsAccessAllowed) { return NativeCall<bool, AShooterPlayerController*, bool>(this, "APrimalStructure.BPOverrideAllowStructureAccess", ForPC, bIsAccessAllowed); }
+	bool BPOverrideAllowStructureAccess(AShooterPlayerController* ForPC, bool bIsAccessAllowed, bool bForInventoryOnly) { return NativeCall<bool, AShooterPlayerController*, bool, bool>(this, "APrimalStructure.BPOverrideAllowStructureAccess", ForPC, bIsAccessAllowed, bForInventoryOnly); }
 	FString* BPOverrideCantBuildReasonString(FString* result, int CantBuildReason) { return NativeCall<FString*, FString*, int>(this, "APrimalStructure.BPOverrideCantBuildReasonString", result, CantBuildReason); }
 	bool BPOverrideDemolish(AShooterPlayerController* ForPC) { return NativeCall<bool, AShooterPlayerController*>(this, "APrimalStructure.BPOverrideDemolish", ForPC); }
 	FRotator* BPOverridePlacementRotation(FRotator* result, FVector ViewPos, FRotator ViewRot) { return NativeCall<FRotator*, FRotator*, FVector, FRotator>(this, "APrimalStructure.BPOverridePlacementRotation", result, ViewPos, ViewRot); }
@@ -661,7 +661,7 @@ struct APrimalStructureBed : APrimalStructure
 	void Destroyed() { NativeCall<void>(this, "APrimalStructureBed.Destroyed"); }
 	void BeginPlay() { NativeCall<void>(this, "APrimalStructureBed.BeginPlay"); }
 	FSpawnPointInfo* GetSpawnPointInfo(FSpawnPointInfo* result) { return NativeCall<FSpawnPointInfo*, FSpawnPointInfo*>(this, "APrimalStructureBed.GetSpawnPointInfo", result); }
-	static APrimalStructure* FindBedWithID(UWorld* forWorld, int theBedID) { return NativeCall<APrimalStructure*, UWorld*, int>(nullptr, "APrimalStructureBed.FindBedWithID", forWorld, theBedID); }
+	static AActor* FindBedWithID(UWorld* forWorld, int theBedID) { return NativeCall<AActor*, UWorld*, int>(nullptr, "APrimalStructureBed.FindBedWithID", forWorld, theBedID); }
 	FVector* GetPlayerSpawnLocation(FVector* result) { return NativeCall<FVector*, FVector*>(this, "APrimalStructureBed.GetPlayerSpawnLocation", result); }
 	FRotator* GetPlayerSpawnRotation(FRotator* result) { return NativeCall<FRotator*, FRotator*>(this, "APrimalStructureBed.GetPlayerSpawnRotation", result); }
 	void PostInitializeComponents() { NativeCall<void>(this, "APrimalStructureBed.PostInitializeComponents"); }
@@ -827,6 +827,8 @@ struct APrimalStructureItemContainer : APrimalStructure
 	float& PoweredBatteryDurabilityToDecreasePerSecondField() { return *GetNativePointerField<float*>(this, "APrimalStructureItemContainer.PoweredBatteryDurabilityToDecreasePerSecond"); }
 	float& DropInventoryDepositTraceDistanceField() { return *GetNativePointerField<float*>(this, "APrimalStructureItemContainer.DropInventoryDepositTraceDistance"); }
 	TArray<TWeakObjectPtr<AShooterPlayerController>>& ValidatedByPinCodePlayerControllersField() { return *GetNativePointerField<TArray<TWeakObjectPtr<AShooterPlayerController>>*>(this, "APrimalStructureItemContainer.ValidatedByPinCodePlayerControllers"); }
+	void UpdateTribeGroupInventoryRank(char NewRank) { NativeCall<void, char>(this, "APrimalStructureItemContainer.UpdateTribeGroupInventoryRank", NewRank); }
+	void UpdateTribeGroupInventoryRank_Implementation(char NewRank) { NativeCall<void, char>(this, "APrimalStructureItemContainer.UpdateTribeGroupInventoryRank_Implementation", NewRank); }
 
 	// Bit fields
 
