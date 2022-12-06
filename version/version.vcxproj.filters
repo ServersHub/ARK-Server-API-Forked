@@ -497,5 +497,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="version.def" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

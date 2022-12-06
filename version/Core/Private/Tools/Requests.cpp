@@ -1,3 +1,4 @@
+#pragma once
 #define WIN32_LEAN_AND_MEAN
 
 #include <Requests.h>
@@ -136,7 +137,7 @@ namespace API
 
 				try
 				{
-					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_GET);
+					Poco::Net::HTTPRequest&& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_GET);
 
 					session->sendRequest(request);
 					Result = pimpl->GetResponse(session, response);
@@ -169,7 +170,7 @@ namespace API
 
 				try
 				{
-					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
+					Poco::Net::HTTPRequest&& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
 
 					request.setContentType("application/x-www-form-urlencoded");
 					request.setContentLength(post_data.length());
@@ -207,7 +208,7 @@ namespace API
 
 				try
 				{
-					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
+					Poco::Net::HTTPRequest&& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
 
 					request.setContentType(content_type);
 					request.setContentLength(post_data.length());
@@ -249,7 +250,7 @@ namespace API
 
 				try
 				{
-					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
+					Poco::Net::HTTPRequest&& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_POST);
 
 					std::string body;
 
@@ -299,7 +300,7 @@ namespace API
 
 				try
 				{
-					Poco::Net::HTTPRequest& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_DELETE);
+					Poco::Net::HTTPRequest&& request = pimpl->ConstructRequest(url, session, headers, Poco::Net::HTTPRequest::HTTP_DELETE);
 
 					session->sendRequest(request);
 					Result = pimpl->GetResponse(session, response);

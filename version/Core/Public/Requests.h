@@ -1,7 +1,8 @@
 #pragma once
 
 #include <functional>
-
+#include <vector>
+#include <mutex>
 #include "API/Base.h"
 
 namespace API
