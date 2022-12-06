@@ -7,16 +7,13 @@
 #include "../../MinHook.h"
 #include "Offsets.h"
 #include "IBaseApi.h"
+#include <detours.h>
 
 namespace API
 {
 	Hooks::Hooks()
 	{
-		if (MH_Initialize() != MH_OK)
-		{
-			Log::GetLog()->critical("Can't initialize MinHook");
-			throw;
-		}
+		//No Longer Required.
 	}
 
 	bool Hooks::SetHookInternal(const std::string& func_name, LPVOID detour, LPVOID* original)
@@ -34,19 +31,35 @@ namespace API
 			                    ? target
 			                    : hook_vector.back()->detour;
 
+
+		if (DetourTransactionBegin())
+		{
+			Log::GetLog()->error("Failed to create Detour Transaction for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+		if (DetourUpdateThread(GetCurrentThread()))
+		{
+			Log::GetLog()->error("Failed to update thread for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+		if (DetourAttach(&new_target, detour))
+		{
+			Log::GetLog()->error("Failed to attach hook for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+
+		if (DetourTransactionCommit())
+		{
+			Log::GetLog()->error("Failed to commit Detour Transaction for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+		*original = new_target; //same as ppOriginal in MH_CreateHook
+
 		hook_vector.push_back(std::make_shared<Hook>(new_target, detour, original));
-
-		if (MH_CreateHook(new_target, detour, original) != MH_OK)
-		{
-			Log::GetLog()->error("Failed to create hook for {}", func_name);
-			return false;
-		}
-
-		if (MH_EnableHook(new_target) != MH_OK)
-		{
-			Log::GetLog()->error("Failed to enable hook for {}", func_name);
-			return false;
-		}
 
 		return true;
 	}
@@ -74,14 +87,35 @@ namespace API
 			return false;
 		}
 
+		if (DetourTransactionBegin())
+		{
+			Log::GetLog()->error("Failed to create Detour Transaction for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+		if (DetourUpdateThread(GetCurrentThread()))
+		{
+			Log::GetLog()->error("Failed to update thread for {}", func_name);
+			DetourTransactionAbort();
+			return false;
+		}
+
 		// Remove all hooks placed on this function
 		for (const auto& hook : hook_vector)
 		{
-			if (MH_RemoveHook(hook->target) != MH_OK)
+			if (DetourDetach(&hook->target, hook->detour))
 			{
-				Log::GetLog()->error("Failed to disable hook for {}", func_name);
+				Log::GetLog()->error("Failed to detach Detour Transaction for {}", func_name);
+				DetourTransactionAbort();
 				return false;
 			}
+		}
+
+		if (DetourTransactionCommit())
+		{
+			Log::GetLog()->error("Failed to commit Detour Transaction for {}", func_name);
+			DetourTransactionAbort();
+			return false;
 		}
 
 		// Remove hook from all_hooks vector
