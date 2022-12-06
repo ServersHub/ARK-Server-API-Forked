@@ -150,4 +150,3 @@ private:
 	void* parent_;
 	std::string field_name_;
 };
-
