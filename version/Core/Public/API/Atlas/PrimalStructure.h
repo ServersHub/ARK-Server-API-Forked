@@ -1722,6 +1722,16 @@ struct APrimalRaft : APrimalDinoCharacter
 	static void StaticRegisterNativesAPrimalRaft() { NativeCall<void>(nullptr, "APrimalRaft.StaticRegisterNativesAPrimalRaft"); }
 };
 
+struct APrimalModularShip : APrimalRaft {
+	int& MaxSunkLeakingCompsToDestroyField() { return *GetNativePointerField<int*>(this, "APrimalModularShip.MaxSunkLeakingCompsToDestroy"); }
+	float& MaxLeakingTimeBeforeSinkingField() { return *GetNativePointerField<float*>(this, "APrimalModularShip.MaxLeakingTimeBeforeSinking"); }
+	float& RefreshLeakingShipSinkIntervalField() { return *GetNativePointerField<float*>(this, "APrimalModularShip.RefreshLeakingShipSinkInterval"); }
+	float& LastRefreshLeakingShipSinkTimeField() { return *GetNativePointerField<float*>(this, "APrimalModularShip.LastRefreshLeakingShipSinkTime"); }
+	float& StartLeakingTimeField() { return *GetNativePointerField<float*>(this, "APrimalModularShip.StartLeakingTime"); }
+	float& SinkPercentageField() { return *GetNativePointerField<float*>(this, "APrimalModularShip.SinkPercentage"); }
+};
+
+
 struct  APrimalStructureSeating : APrimalStructureItemContainer {};
 
 struct  APrimalStructureSeating_DriverSeat : APrimalStructureSeating
