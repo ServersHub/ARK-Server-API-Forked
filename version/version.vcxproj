@@ -130,7 +130,6 @@
     <ClInclude Include="Core\Public\Requests.h" />
     <ClInclude Include="Core\Public\Timer.h" />
     <ClInclude Include="Core\Public\Tools.h" />
-    <ClInclude Include="MinHook.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Private\Ark\ApiUtils.cpp" />
