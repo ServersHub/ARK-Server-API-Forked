@@ -4,7 +4,6 @@
 
 #include <Logger/Logger.h>
 
-#include "../../MinHook.h"
 #include "Offsets.h"
 #include "IBaseApi.h"
 #include <detours.h>

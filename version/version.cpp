@@ -7,7 +7,6 @@
 #include "Core/Public/Logger/Logger.h"
 #include "Core/Public/Tools.h"
 
-#pragma comment(lib, "libMinHook.x64.lib")
 #pragma comment(lib, "Crypt32.lib")
 #pragma comment(lib, "Iphlpapi.lib")
 
