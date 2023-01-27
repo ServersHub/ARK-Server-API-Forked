@@ -526,6 +526,16 @@ struct UObjectPropertyBase : UProperty
 struct  UStructProperty : UProperty
 {
 	UScriptStruct* StructField() { return *GetNativePointerField<UScriptStruct* *>(this, "UStructProperty.Struct"); }
+	void ExportTextItem(
+		FString* ValueStr,
+		const void* PropertyValue,
+		const void* DefaultValue,
+		UObject* Parent,
+		int PortFlags,
+		UObject* ExportRootScope
+	) {
+		NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UStructProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope);
+	}
 };
 
 template<typename InTCppType> struct TPropertyTypeFundamentals {};
@@ -536,7 +546,40 @@ template<typename InTCppType> struct TUObjectPropertyBase : public TProperty<InT
 struct UObjectProperty : TUObjectPropertyBase<UObject*> { 
 	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UObjectProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
 };
-struct UClassProperty : UObjectProperty {};
+struct UClassProperty : UObjectProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UClassProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UTextProperty : UProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UTextProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UDelegateProperty : UProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UDelegateProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UMulticastDelegateProperty : UProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UMulticastDelegateProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UWeakObjectProperty : UProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UWeakObjectProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UInterfaceProperty : UProperty {
+	void ExportTextItem(FString* ValueStr, const void* PropertyValue, const void* DefaultValue, UObject* Parent, int PortFlags, UObject* ExportRootScope) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UInterfaceProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
+
+struct UArrayProperty : UProperty {
+	void ExportTextItem(
+		FString* ValueStr,
+		const void* PropertyValue,
+		const void* DefaultValue,
+		UObject* Parent,
+		int PortFlags,
+		UObject* ExportRootScope
+	) { NativeCall<void, FString*, const void*, const void*, UObject*, int, UObject*>(this, "UArrayProperty.ExportTextItem", ValueStr, PropertyValue, DefaultValue, Parent, PortFlags, ExportRootScope); }
+};
 
 struct UNumericProperty : UProperty
 {
