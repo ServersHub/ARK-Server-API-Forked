@@ -5122,6 +5122,7 @@ struct AShooterCharacter : APrimalCharacter
 	void ServerUpdateCurrentVoiceModeAsUInt32(unsigned int NewValue) { NativeCall<void, unsigned int>(this, "AShooterCharacter.ServerUpdateCurrentVoiceModeAsUInt32", NewValue); }
 	void SetCarriedPitchYaw(float NewCarriedPitch, float NewCarriedYaw) { NativeCall<void, float, float>(this, "AShooterCharacter.SetCarriedPitchYaw", NewCarriedPitch, NewCarriedYaw); }
 	void SyncGrapHookDistance(float Distance) { NativeCall<void, float>(this, "AShooterCharacter.SyncGrapHookDistance", Distance); }
+	void BPUnlockedAllExplorerNotes() { NativeCall<void>(this, "AShooterCharacter.BPUnlockedAllExplorerNotes"); }
 };
 
 struct FPrimalPersistentCharacterStatsStruct
@@ -5141,6 +5142,7 @@ struct FPrimalPersistentCharacterStatsStruct
 	FieldArray<FDinoOrderGroup, 10> DinoOrderGroupsField() { return { this, "FPrimalPersistentCharacterStatsStruct.DinoOrderGroups" }; }
 	int& CurrentlySelectedDinoOrderGroupField() { return *GetNativePointerField<int*>(this, "FPrimalPersistentCharacterStatsStruct.CurrentlySelectedDinoOrderGroup"); }
 	float& PercentageOfHeadHairGrowthField() { return *GetNativePointerField<float*>(this, "FPrimalPersistentCharacterStatsStruct.PercentageOfHeadHairGrowth"); }
+	bool& bHasUnlockedAllExplorerNotes() { return *GetNativePointerField<bool*>(this, "FPrimalPersistentCharacterStatsStruct.bHasUnlockedAllExplorerNotes"); }
 	float& PercentageOfFacialHairGrowthField() { return *GetNativePointerField<float*>(this, "FPrimalPersistentCharacterStatsStruct.PercentageOfFacialHairGrowth"); }
 	char& FacialHairIndexField() { return *GetNativePointerField<char*>(this, "FPrimalPersistentCharacterStatsStruct.FacialHairIndex"); }
 	char& HeadHairIndexField() { return *GetNativePointerField<char*>(this, "FPrimalPersistentCharacterStatsStruct.HeadHairIndex"); }
@@ -5228,6 +5230,9 @@ struct UPrimalPlayerData : UObject
 	void BPApplyToPlayerCharacter(AShooterPlayerState* ForPlayerState, AShooterCharacter* NewPlayerCharacter) { NativeCall<void, AShooterPlayerState*, AShooterCharacter*>(this, "UPrimalPlayerData.BPApplyToPlayerCharacter", ForPlayerState, NewPlayerCharacter); }
 	void BPCreatedNewPlayerData() { NativeCall<void>(this, "UPrimalPlayerData.BPCreatedNewPlayerData"); }
 	void BPForceDefeatedBoss(int DifficultyIndex, FName BossName, AShooterPlayerController* PlayerController) { NativeCall<void, int, FName, AShooterPlayerController*>(this, "UPrimalPlayerData.BPForceDefeatedBoss", DifficultyIndex, BossName, PlayerController); }
+
+	void SetChibiLevels(int newLevels, AShooterPlayerController* ForPC) { NativeCall<void, int, AShooterPlayerController*>(this, "UPrimalPlayerData.SetChibiLevels", newLevels, ForPC); }
+	void GrantGeneralizedAchievementTag(FName ObtainedAchievementTag, AShooterPlayerController* ForPC) { NativeCall<void, FName, AShooterPlayerController*>(this, "UPrimalPlayerData.GrantGeneralizedAchievementTag", ObtainedAchievementTag, ForPC); }
 };
 
 struct UPrimalCharacterStatusComponent : UActorComponent
