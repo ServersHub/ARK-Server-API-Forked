@@ -2920,6 +2920,7 @@ struct AShooterPlayerController : ABasePlayerController
 	void ServerRequestDownloadPlayerCharacter_Implementation(FArkTributePlayerData DownloadedCharacter, int spawnPointID, int spawnRegionIndex) { NativeCall<void, FArkTributePlayerData, int, int>(this, "AShooterPlayerController.ServerRequestDownloadPlayerCharacter_Implementation", DownloadedCharacter, spawnPointID, spawnRegionIndex); }
 	void ClientDownloadPlayerCharacterRequestFinished_Implementation(bool Success) { NativeCall<void, bool>(this, "AShooterPlayerController.ClientDownloadPlayerCharacterRequestFinished_Implementation", Success); }
 	FString* LinkedPlayerIDString(FString* result) { return NativeCall<FString*, FString*>(this, "AShooterPlayerController.LinkedPlayerIDString", result); }
+	FString LinkedPlayerIDString() { FString result; return *LinkedPlayerIDString(&result); }
 	void ServerSetSubscribedApp_Implementation(int AppID, bool bPreventDefaultItems) { NativeCall<void, int, bool>(this, "AShooterPlayerController.ServerSetSubscribedApp_Implementation", AppID, bPreventDefaultItems); }
 	void ServerAddItemToSteamInventory(int ItemSteamDefID, int Quantity) { NativeCall<void, int, int>(this, "AShooterPlayerController.ServerAddItemToSteamInventory", ItemSteamDefID, Quantity); }
 	void ClientRemoveItemFromSteamInventory_Implementation(TArray<unsigned __int64>* ItemSteamUserID, int Quantity) { NativeCall<void, TArray<unsigned __int64>*, int>(this, "AShooterPlayerController.ClientRemoveItemFromSteamInventory_Implementation", ItemSteamUserID, Quantity); }
