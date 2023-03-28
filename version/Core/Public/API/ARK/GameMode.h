@@ -1119,7 +1119,7 @@ struct AShooterGameMode : AGameMode
 	float GetFloatOptionIni(FString Section, FString OptionName) { return NativeCall<float, FString, FString>(this, "AShooterGameMode.GetFloatOptionIni", Section, OptionName); }
 	int GetIntOptionIni(FString Section, FString OptionName) { return NativeCall<int, FString, FString>(this, "AShooterGameMode.GetIntOptionIni", Section, OptionName); }
 	FString* GetStringOption(FString* result, FString Section, FString OptionName) { return NativeCall<FString*, FString*, FString, FString>(this, "AShooterGameMode.GetStringOption", result, Section, OptionName); }
-	void SaveWorld() { NativeCall<void>(this, "AShooterGameMode.SaveWorld"); }
+	void SaveWorld(bool bForceWaitOnSaveToComplete) { NativeCall<void, bool>(this, "AShooterGameMode.SaveWorld", bForceWaitOnSaveToComplete); }
 	void ClearSavesAndRestart() { NativeCall<void>(this, "AShooterGameMode.ClearSavesAndRestart"); }
 	bool LoadWorld() { return NativeCall<bool>(this, "AShooterGameMode.LoadWorld"); }
 	TSubclassOf<AGameSession>* GetGameSessionClass(TSubclassOf<AGameSession>* result) { return NativeCall<TSubclassOf<AGameSession>*, TSubclassOf<AGameSession>*>(this, "AShooterGameMode.GetGameSessionClass", result); }
