@@ -1,7 +1,9 @@
 #include <Windows.h>
+#include <tlhelp32.h>
 #include <cstdio>
 #include <filesystem>
-
+#include <fstream>
+#include <json.hpp>
 #include "Core/Private/Ark/ArkBaseApi.h"
 #include "Core/Private/Atlas/AtlasBaseApi.h"
 #include "Core/Public/Logger/Logger.h"
@@ -20,8 +22,55 @@ LPCSTR import_names[] = {
 	"VerLanguageNameW", "VerQueryValueA", "VerQueryValueW"
 };
 
+DWORD GetParentProcessId()
+{
+	const DWORD InvalidParentProcessId = 0;
+
+	HANDLE Snapshot = 0;
+	PROCESSENTRY32 ProcessEntry;
+	DWORD PID = GetCurrentProcessId();
+
+	Snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (Snapshot == INVALID_HANDLE_VALUE)
+		return InvalidParentProcessId;
+
+	ZeroMemory(&ProcessEntry, sizeof(ProcessEntry));
+	ProcessEntry.dwSize = sizeof(ProcessEntry);
+
+	if (!Process32First(Snapshot, &ProcessEntry))
+		return InvalidParentProcessId;
+
+	do
+	{
+		if (ProcessEntry.th32ProcessID == PID)
+			return ProcessEntry.th32ParentProcessID;
+	} while (Process32Next(Snapshot, &ProcessEntry));
+
+	return InvalidParentProcessId;
+}
+
+bool AttachToParent()
+{
+	const std::string config_path = ArkApi::Tools::GetCurrentDir() + "/config.json";
+	std::ifstream file{ config_path };
+	if (!file.is_open())
+		return false;
+
+	nlohmann::json config;
+	file >> config;
+	file.close();
+	
+	return config["settings"].value("AttachToParent", false);
+}
+
 void OpenConsole()
 {
+	DWORD parentProcessId = GetParentProcessId();
+	bool attachToParent = AttachToParent();
+	if (GetConsoleWindow())
+		return;
+	if (attachToParent && parentProcessId && AttachConsole(parentProcessId))
+		return;
 	AllocConsole();
 	FILE* p_cout;
 	freopen_s(&p_cout, "conout$", "w", stdout);
