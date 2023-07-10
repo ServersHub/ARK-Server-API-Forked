@@ -35,7 +35,7 @@ Currently this project is ran and supported by [GameServersHub](https://gameserv
   - `\ARK\ShooterGame\Win64\logs\ArkApi.log`
   - `\ARK\ShooterGame\Saved\Logs`
 
-You may join our [Discord server](https://gameservershub.com/forums/pages/discord/) if you have any questions/feedback or want general support regarding ArkServerAPI.
+You may join our [Discord server](https://discord.gg/gsh) if you have any questions/feedback or want general support regarding ArkServerAPI.
 
 ## Disclaimers
 
