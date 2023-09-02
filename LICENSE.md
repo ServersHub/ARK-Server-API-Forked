@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2023 GameServersHub and ArkServerApi
+Copyright (c) 2023 GameServersHub and ArkServerApi  
 Copyright (c) 2017-2018 Michidu
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
